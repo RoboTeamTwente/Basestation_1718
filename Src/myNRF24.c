@@ -567,13 +567,13 @@ void setDataPipeArray(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable[6]){
 		TextOut("Error, pipe 0 reserved for acks\n");
 	}
 	else{
-		uint8_t reg02 = 0;
+		uint8_t reg02 = 0; //what is this purpose of this variable? -- the value which will be written to Register 0x02...
 		for(int i = 0; i < 6; i++){
 			if(pipeEnable[i] == 1){
 				reg02 = setBit(reg02, i, 1);
 			}
 		}
-		writeReg(spiHandle, 0x02, reg02);
+		writeReg(spiHandle, 0x02, reg02); //what is the hardcoded number? -- apparently the EN_RXADDR register (datasheet page 54)
 	}
 }
 
@@ -856,6 +856,9 @@ uint8_t sendPacketPart1(SPI_HandleTypeDef* spiHandle, uint8_t packet[12]){
 
 	setTXaddress(spiHandle, addressLong);
 	sendData(spiHandle, packet, 12);
+
+
+	//returning Robot ID, but no call to this function ever appears to use the return value
 	return addressLong[4];
 }
 

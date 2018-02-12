@@ -25,7 +25,10 @@
  */
 
 void createRobotPacket(int id, int robot_vel, int ang, uint8_t rot_cclockwise, int w_vel, uint8_t kick_force, uint8_t do_kick, uint8_t chip, uint8_t forced, uint8_t dribble_cclockwise, uint8_t dribble_vel, uint8_t* byteArr){
-
+	/*
+	 * byteArr is a very generic name...
+	 * Isn't that the array with the packet data to be sent with the NRF24?
+	 */
 
 
     // First nibble are the robot id

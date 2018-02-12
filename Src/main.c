@@ -78,6 +78,13 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+	/*
+	 * Why "madeUpPacket"? Is this an "invented" and totally made-up packet?
+	 * As I understand it, it is structured data which we are about to send as payload with the NRF module.
+	 * I believe there could be a better name for this. "madeUp" sounds like it's fake and untrue.
+	 *
+	 * Edit: Oh, I get it. It fakes a USB packet.
+	 */
 	uint8_t madeUpPacket[12];
 
   /* USER CODE END 1 */
@@ -102,13 +109,23 @@ int main(void)
   ceLow(&hspi3);
   uint8_t address[5] = {0x12, 0x34, 0x56, 0x78, 0x97};
   initBase(&hspi3, 78  , address);
+  /*
+   * The following so called "buttoms" are actually buttons.
+   * Unfortunately it's difficult to rename them (unless you do it manually on all occurences)
+   * due to a 7 year old bug in the Refactor/Rename method of Eclipse.
+   * See: https://bugs.eclipse.org/bugs/show_bug.cgi?id=351410
+   *
+   * 12.02.18  Ulf Stottmeister
+   */
   GPIO_PinState buttom6;
   GPIO_PinState buttom5;
   GPIO_PinState buttom4;
+  /* never used:
   GPIO_PinState buttom3;
   GPIO_PinState buttom2;
   GPIO_PinState prevButtom6;
   GPIO_PinState prevButtom5;
+  */
   uint8_t remote = 0;
 
   /* USER CODE END 2 */
@@ -121,25 +138,25 @@ int main(void)
   int robot_vel = 0;
   int ang = 0;
   uint8_t rot_cclockwise = 0;
-  int w_vel = 0;
+  int w_vel = 0; //w=omega velocity: rotational velocity.
   uint8_t kick_force = 0;
   uint8_t do_kick = 0;
   uint8_t chip = 0;
   uint8_t forced = 0;
   uint8_t dribble_cclockwise = 0;
   uint8_t dribble_vel = 0xff;
-  uint8_t* byteArr = 0;
+  // never used: uint8_t* byteArr = 0;
   uint8_t prevBlue = 0;
   uint8_t blue = 0;
-  int cnt = 0;
+  // never used: int cnt = 0;
 
   while (1)
   {
 	  buttom6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
 	  buttom5 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
 	  buttom4 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11);
-	  buttom3 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_13);
-	  buttom2 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_15);
+	  //never used: buttom3 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_13);
+	  //never used: buttom2 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_15);
 	  blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin);
 
 	  if(blue == 1 && blue != prevBlue){
@@ -185,6 +202,16 @@ int main(void)
 	  else{
 		  //TextOut("turning");
 		  //remote = 1;
+		  /*
+		   * Apparently this section should reset the Robot to an idle state after it was controlled with the buttons on the board.
+		   * However, it would actually be executed whenever no button was pressed with every round of the main loop.
+		   * That means it is also executed when the board is controlled over USB.
+		   * This does not seem to be a big issue, since the varables set here are all related to creating a packet which is meant to
+		   * overwrite the usbData packet, which, however, is never overwritten unless remote=1.
+		   *
+		   * Therefore: in such a case we are doing useless memory writes here which are never read.
+		   *
+		   */
 		  w_vel = 000;
 		  rot_cclockwise = 1;
 		  robot_vel = 0000;
@@ -197,7 +224,24 @@ int main(void)
 
 	  if(remote == 1){
 
+		  /*
+		   * I see that remote is set to 1 whenever a button on the board is pressed.
+		   * But it is never reset to 0.
+		   * Does that mean, that the board will stay in manual mode (button controlled) until reset?
+		   * If that is the case, then we could ignore any USB data anyway and circumvent the below mentioned possible
+		   * flaw for a race condition (which would be caused when the button control is used while USB data is received at the same time).
+		   */
 		  for(int i = 0; i < 12; i++){
+			  /*
+			   * why are you overwriting the usbData when it appears you could just
+			   * call sendPacketPart1() with madeUpPacket instead?
+			   *
+			   * usbData seems to be an external array, possibly overwritten by an interrupt service routine,
+			   * so it doesn't seem to be thread safe to overwrite this data. It might cause a race condition:
+			   * it might be overwritten by an interrupt while you attempt to overwrite it or after you
+			   * were overwriting it and before the call of sendPacketPart1().
+			   *
+			   */
 			  usbData[i] = madeUpPacket[i];
 
 		  }
@@ -226,8 +270,8 @@ int main(void)
 	  }
 
 
-	  prevButtom6 = buttom6;
-	  prevButtom5 = buttom5;
+	  //was never read: prevButtom6 = buttom6;
+	  //was never read: prevButtom5 = buttom5;
 	  prevBlue = blue;
 	  waitAck(&hspi3, usbData[0] >> 4);
 
