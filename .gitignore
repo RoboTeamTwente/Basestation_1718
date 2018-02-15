@@ -4,3 +4,6 @@ Debug/
 \.mxproject
 
 STM32F3DISCOVERY\.xml
+.cproject
+.settings/language.settings.xml
+Basestation Run.cfg
