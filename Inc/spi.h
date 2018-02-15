@@ -4,11 +4,6 @@
   * Description        : This file provides code for the configuration
   *                      of the SPI instances.
   ******************************************************************************
-  * This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
   *
   * Copyright (c) 2018 STMicroelectronics International N.V. 
   * All rights reserved.
@@ -61,15 +56,15 @@
 
 /* USER CODE END Includes */
 
-extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-extern void _Error_Handler(char *, int);
+extern void Error_Handler(void);
 
-void MX_SPI1_Init(void);
+void MX_SPI3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 

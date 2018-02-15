@@ -1,14 +1,8 @@
 /**
   ******************************************************************************
-  * @file           : main.h
-  * @brief          : Header for main.c file.
-  *                   This file contains the common defines of the application.
+  * File Name          : main.h
+  * Description        : This file contains the common defines of the application
   ******************************************************************************
-  * This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
   *
   * Copyright (c) 2018 STMicroelectronics International N.V. 
   * All rights reserved.
@@ -46,12 +40,10 @@
   *
   ******************************************************************************
   */
-
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __MAIN_H__
-#define __MAIN_H__
-
-/* Includes ------------------------------------------------------------------*/
+#ifndef __MAIN_H
+#define __MAIN_H
+  /* Includes ------------------------------------------------------------------*/
 
 /* USER CODE BEGIN Includes */
 
@@ -75,30 +67,38 @@
 #define OSC_IN_GPIO_Port GPIOF
 #define OSC_OUT_Pin GPIO_PIN_1
 #define OSC_OUT_GPIO_Port GPIOF
-#define B1_Pin GPIO_PIN_0
-#define B1_GPIO_Port GPIOA
+#define Blue_Pin GPIO_PIN_0
+#define Blue_GPIO_Port GPIOA
 #define SPI1_SCK_Pin GPIO_PIN_5
 #define SPI1_SCK_GPIO_Port GPIOA
 #define SPI1_MISO_Pin GPIO_PIN_6
 #define SPI1_MISO_GPIO_Port GPIOA
-#define SPI1_MISOA7_Pin GPIO_PIN_7
-#define SPI1_MISOA7_GPIO_Port GPIOA
+#define SPI1_MOSI_Pin GPIO_PIN_7
+#define SPI1_MOSI_GPIO_Port GPIOA
+#define SW6_Pin GPIO_PIN_7
+#define SW6_GPIO_Port GPIOE
 #define LD4_Pin GPIO_PIN_8
 #define LD4_GPIO_Port GPIOE
-#define LD3_Pin GPIO_PIN_9
-#define LD3_GPIO_Port GPIOE
+#define SW5_Pin GPIO_PIN_9
+#define SW5_GPIO_Port GPIOE
 #define LD5_Pin GPIO_PIN_10
 #define LD5_GPIO_Port GPIOE
-#define LD7_Pin GPIO_PIN_11
-#define LD7_GPIO_Port GPIOE
+#define SW4_Pin GPIO_PIN_11
+#define SW4_GPIO_Port GPIOE
 #define LD9_Pin GPIO_PIN_12
 #define LD9_GPIO_Port GPIOE
-#define LD10_Pin GPIO_PIN_13
-#define LD10_GPIO_Port GPIOE
+#define SW3_Pin GPIO_PIN_13
+#define SW3_GPIO_Port GPIOE
 #define LD8_Pin GPIO_PIN_14
 #define LD8_GPIO_Port GPIOE
-#define LD6_Pin GPIO_PIN_15
-#define LD6_GPIO_Port GPIOE
+#define SW2_Pin GPIO_PIN_15
+#define SW2_GPIO_Port GPIOE
+#define IRQ_SPI1_Pin GPIO_PIN_10
+#define IRQ_SPI1_GPIO_Port GPIOD
+#define CSN_SPI1_Pin GPIO_PIN_12
+#define CSN_SPI1_GPIO_Port GPIOD
+#define CE_SPI1_Pin GPIO_PIN_14
+#define CE_SPI1_GPIO_Port GPIOD
 #define DM_Pin GPIO_PIN_11
 #define DM_GPIO_Port GPIOA
 #define DP_Pin GPIO_PIN_12
@@ -107,6 +107,12 @@
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
+#define IRQ_SPI3_Pin GPIO_PIN_1
+#define IRQ_SPI3_GPIO_Port GPIOD
+#define CSN_SPI3_Pin GPIO_PIN_2
+#define CSN_SPI3_GPIO_Port GPIOD
+#define CE_SPI3_Pin GPIO_PIN_3
+#define CE_SPI3_GPIO_Port GPIOD
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 #define I2C1_SCL_Pin GPIO_PIN_6
@@ -117,28 +123,17 @@
 #define MEMS_INT1_GPIO_Port GPIOE
 #define MEMS_INT2_Pin GPIO_PIN_1
 #define MEMS_INT2_GPIO_Port GPIOE
-
-/* ########################## Assert Selection ############################## */
-/**
-  * @brief Uncomment the line below to expanse the "assert_param" macro in the 
-  *        HAL drivers code
-  */
-/* #define USE_FULL_ASSERT    1U */
-
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-void _Error_Handler(char *, int);
+/**
+  * @}
+  */ 
 
-#define Error_Handler() _Error_Handler(__FILE__, __LINE__)
-#ifdef __cplusplus
-}
-#endif
+/**
+  * @}
+*/ 
 
-#endif /* __MAIN_H__ */
-
+#endif /* __MAIN_H */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
