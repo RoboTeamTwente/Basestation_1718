@@ -165,6 +165,10 @@ int main(void)
   uint8_t blue = 0;
   // never used: int cnt = 0;
 
+  while(1) { //this loop is for debugging
+	  fun();
+  }
+
   while (1)
   {
 	  buttom6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
