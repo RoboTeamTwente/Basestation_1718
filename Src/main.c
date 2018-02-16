@@ -49,6 +49,7 @@
 #include "main.h"
 #include "stm32f3xx_hal.h"
 #include "spi.h"
+#include "usart.h"
 #include "usb_device.h"
 #include "gpio.h"
 
@@ -117,6 +118,7 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI3_Init();
   MX_USB_DEVICE_Init();
+  MX_USART1_Init();
   /* USER CODE BEGIN 2 */
 
   //fun();
@@ -167,6 +169,7 @@ int main(void)
 
   while(1) { //this loop is for debugging
 	  fun();
+	  TextOut("Debug Loop!");
   }
 
   while (1)
@@ -343,7 +346,8 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_USART1;
+  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.USBClockSelection = RCC_USBCLKSOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
