@@ -119,7 +119,7 @@ int main(void)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
-  fun();
+  fun2();
   nssHigh(&hspi3);
   ceLow(&hspi3);
   uint8_t address[5] = {0x12, 0x34, 0x56, 0x78, 0x97};
@@ -165,6 +165,7 @@ int main(void)
   uint8_t blue = 0;
   // never used: int cnt = 0;
 
+  uint8_t debug_transmit_repeatedly = 1;
 
   while (1)
   {
@@ -175,6 +176,18 @@ int main(void)
 	  //never used: buttom2 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_15);
 	  blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin);
 
+	  if(debug_transmit_repeatedly == 1) {
+		  TextOut("sending a packet");
+		  remote = 1;
+		  robot_vel = 1000;
+		  ang = 0;
+		  w_vel = 0;
+		  createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
+		  sendPacketPart1(&hspi3, madeUpPacket);
+		  HAL_Delay(300);
+		  fun(); //delay with a LED animation
+
+	  }
 	  if(blue == 1 && blue != prevBlue){
 		  //initBase(&hspi3, 0x2A, address);
 		  HAL_Delay(100);
