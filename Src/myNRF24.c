@@ -730,7 +730,7 @@ void readData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t leng
 
 	nssLow(spiHandle);
 
-	uint8_t command = 0x61;
+	uint8_t command = 0x61; //R_RX_PAYLOAD
 	HAL_SPI_Transmit(spiHandle, &command, 1, 100);
 
 	HAL_SPI_Receive(spiHandle, receivedData, length, 100);

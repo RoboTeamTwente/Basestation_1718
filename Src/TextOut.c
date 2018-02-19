@@ -34,6 +34,7 @@ void backslashNfixer(char* str){
 	char* backslashNpointer = strchr(str, '\n');
 	memcpy(smallStrBuffer, str, length);
 	if(backslashNpointer != NULL){
+		//before "somestring\n\0", after "somestring\n\r\0" -- does it work like this?
 		smallStrBuffer[length] = '\r';
 		smallStrBuffer[length+1] = '\0';
 	}

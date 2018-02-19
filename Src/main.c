@@ -49,7 +49,6 @@
 #include "main.h"
 #include "stm32f3xx_hal.h"
 #include "spi.h"
-#include "usart.h"
 #include "usb_device.h"
 #include "gpio.h"
 
@@ -118,10 +117,9 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI3_Init();
   MX_USB_DEVICE_Init();
-  MX_USART1_Init();
   /* USER CODE BEGIN 2 */
 
-  //fun();
+  fun();
   nssHigh(&hspi3);
   ceLow(&hspi3);
   uint8_t address[5] = {0x12, 0x34, 0x56, 0x78, 0x97};
@@ -167,10 +165,6 @@ int main(void)
   uint8_t blue = 0;
   // never used: int cnt = 0;
 
-  while(1) { //this loop is for debugging
-	  fun();
-	  TextOut("Debug Loop!");
-  }
 
   while (1)
   {
@@ -184,11 +178,11 @@ int main(void)
 	  if(blue == 1 && blue != prevBlue){
 		  //initBase(&hspi3, 0x2A, address);
 		  HAL_Delay(100);
-		  printAllRegisters(&hspi3);
+		  //printAllRegisters(&hspi3);
 	  }
 
 	  if(!buttom6){
-		  //TextOut("forward");
+		  TextOut("forward");
 		  remote = 1;
 		  robot_vel = 1000;
 		  ang = 0;
@@ -199,7 +193,7 @@ int main(void)
 
 	  }
 	  else if(!buttom5){
-		  //TextOut("sidewards");
+		  TextOut("sidewards");
 		  /*remote = 1;
 		  robot_vel = 250;
 		  ang = 256;
@@ -213,7 +207,7 @@ int main(void)
 		  createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
 	  }
 	  else if(!buttom4){
-		  //TextOut("turning");
+		  TextOut("turning");
 		  remote = 1;
 		  robot_vel = 0;
 		  w_vel = 360;
@@ -295,7 +289,9 @@ int main(void)
 	  //was never read: prevButtom6 = buttom6;
 	  //was never read: prevButtom5 = buttom5;
 	  prevBlue = blue;
-	  waitAck(&hspi3, usbData[0] >> 4);
+
+
+	  //waitAck(&hspi3, usbData[0] >> 4); //note: this prints ACK messages with TextOut()
 
 
   /* USER CODE END WHILE */
@@ -346,8 +342,7 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_USART1;
-  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
   PeriphClkInit.USBClockSelection = RCC_USBCLKSOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
