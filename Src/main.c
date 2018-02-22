@@ -124,17 +124,9 @@ int main(void)
   ceLow(&hspi3);
   uint8_t address[5] = {0x12, 0x34, 0x56, 0x78, 0x97};
   initBase(&hspi3, 78  , address);
-  /*
-   * The following so called "buttoms" are actually buttons.
-   * Unfortunately it's difficult to rename them (unless you do it manually on all occurences)
-   * due to a 7 year old bug in the Refactor/Rename method of Eclipse.
-   * See: https://bugs.eclipse.org/bugs/show_bug.cgi?id=351410
-   *
-   * 12.02.18  Ulf Stottmeister
-   */
-  GPIO_PinState buttom6;
-  GPIO_PinState buttom5;
-  GPIO_PinState buttom4;
+  GPIO_PinState button6;
+  GPIO_PinState button5;
+  GPIO_PinState button4;
   /* never used:
   GPIO_PinState buttom3;
   GPIO_PinState buttom2;
@@ -169,9 +161,9 @@ int main(void)
 
   while (1)
   {
-	  buttom6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
-	  buttom5 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
-	  buttom4 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11);
+	  button6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
+	  button5 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
+	  button4 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11);
 	  //never used: buttom3 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_13);
 	  //never used: buttom2 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_15);
 	  blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin);
@@ -183,6 +175,18 @@ int main(void)
 		  ang = 0;
 		  w_vel = 0;
 		  createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
+
+		  for(int i = 0; i < 12; i++){
+			  usbData[i] = madeUpPacket[i];
+
+		  }
+		  usbLength = 12;
+		  sendPacketPart1(&hspi3, usbData);
+		  usbLength = 0;
+		  HAL_Delay(10);
+
+
+
 		  sendPacketPart1(&hspi3, madeUpPacket);
 		  HAL_Delay(300);
 		  fun(); //delay with a LED animation
@@ -194,7 +198,7 @@ int main(void)
 		  //printAllRegisters(&hspi3);
 	  }
 
-	  if(!buttom6){
+	  if(!button6){
 		  TextOut("forward");
 		  remote = 1;
 		  robot_vel = 1000;
@@ -205,7 +209,7 @@ int main(void)
 
 
 	  }
-	  else if(!buttom5){
+	  else if(!button5){
 		  TextOut("sidewards");
 		  /*remote = 1;
 		  robot_vel = 250;
@@ -219,7 +223,7 @@ int main(void)
 		  chip = 0;
 		  createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
 	  }
-	  else if(!buttom4){
+	  else if(!button4){
 		  TextOut("turning");
 		  remote = 1;
 		  robot_vel = 0;
