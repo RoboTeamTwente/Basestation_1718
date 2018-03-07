@@ -60,7 +60,7 @@ uint8_t readBit(uint8_t byte, uint8_t position);
 //******************the user is not supposed to use these***********************//
 
 //put the csn pin corresponding to the SPI used high
-void nssHigh(SPI_HandleTypeDef* spiHandle);
+static void nssHigh(SPI_HandleTypeDef* spiHandle);
 
 //put the csn pin corresponding to the SPI used low
 void nssLow(SPI_HandleTypeDef* spiHandle);

@@ -119,14 +119,22 @@ int main(void)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
+
+
   fun2();
-  nssHigh(&hspi3);
-  ceLow(&hspi3);
+  //nssHigh(&hspi3); //why??
+  //ceLow(&hspi3);
   uint8_t address[5] = {0x12, 0x34, 0x56, 0x78, 0x97};
   initBase(&hspi3, 78  , address);
   GPIO_PinState button6;
   GPIO_PinState button5;
   GPIO_PinState button4;
+
+  flushRX(&hspi3);
+  HAL_Delay(10);
+  flushTX(&hspi3);
+  HAL_Delay(10);
+
   /* never used:
   GPIO_PinState buttom3;
   GPIO_PinState buttom2;
@@ -159,6 +167,9 @@ int main(void)
 
   uint8_t debug_transmit_repeatedly = 1;
 
+  uint8_t pktNum = 0;
+  uint8_t toggleMe = 1;
+
   while (1)
   {
 	  button6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
@@ -169,28 +180,36 @@ int main(void)
 	  blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin);
 
 	  if(debug_transmit_repeatedly == 1) {
-		  TextOut("sending a packet");
-		  remote = 1;
-		  robot_vel = 1000;
-		  ang = 0;
-		  w_vel = 0;
-		  createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
 
-		  for(int i = 0; i < 12; i++){
-			  usbData[i] = madeUpPacket[i];
 
+		  /*
+		   * Apparently we need to write to the STATUS register
+		   * to make the Basestation keep sending packets in the setting of
+		   * sending two different packets in an alternating manner.
+		   *
+		   * Next thing to find out is: which Bit(s) do we need to set in the STATUS register
+		   * in order to do that -- and why?
+		   */
+		  // see page 54 and further for reset values
+		  writeReg(&hspi3, 0x07, 0x7E); // STATUS //weird things with clear interrups going on here. see datashet
+
+
+		  pktNum++;
+
+		  if(toggleMe){
+			  //TextOut("Sending a packet to Robot 2.");
+			  createRobotPacket(id, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
+			  toggleMe = 0;
+		  } else {
+			  //TextOut("Sending a packet to Robot 3.");
+			  createRobotPacket(3, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
+			  toggleMe = 1;
 		  }
-		  usbLength = 12;
-		  sendPacketPart1(&hspi3, usbData);
-		  usbLength = 0;
-		  HAL_Delay(10);
-
-
 
 		  sendPacketPart1(&hspi3, madeUpPacket);
-		  HAL_Delay(300);
-		  fun(); //delay with a LED animation
-
+		  HAL_Delay(200);
+		  //fun(); //delay with a LED animation
+		  continue; //skip to the next loop iteration
 	  }
 	  if(blue == 1 && blue != prevBlue){
 		  //initBase(&hspi3, 0x2A, address);

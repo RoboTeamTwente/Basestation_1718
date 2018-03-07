@@ -712,13 +712,17 @@ void sendData(SPI_HandleTypeDef* spiHandle, uint8_t data[], uint8_t length){
 	nssLow(spiHandle);
 	uint8_t command = 0xA0; // W_TX_PAYLOAD
 	HAL_SPI_Transmit(spiHandle, &command, 1, 100); //send the write to TX FIFO command
-//	for(int i = 0; i < length; i++){
-//		HAL_SPI_Transmit(spiHandle, data + i, 1, 100); //send the data to NRF
-//	}
-	HAL_SPI_TransmitReceive(spiHandle, data, troep, length, 100);
+
+	//old method sending unidirectional
+	//for(int i = 0; i < length; i++){
+	//	HAL_SPI_Transmit(spiHandle, data + i, 1, 100); //send the data to NRF
+	//}
+	HAL_SPI_TransmitReceive(spiHandle, data, troep, length, 100); //new method with return data
 	nssHigh(spiHandle);
 
 	//send over air
+
+	//is it save to set CE high here (disables transmitter module)? Can we be sure that all the data is already transmitted?
 	ceHigh(spiHandle);
 
 
@@ -831,6 +835,8 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 
 	//enable pipe 0, diabable all other pipes
 	uint8_t dataPipeArray[6] = {1, 0, 0, 0, 0, 0};
+
+	//is this overwritten again whenever we transmit?
 	setDataPipeArray(spiHandle, dataPipeArray);
 
 	//set the RX buffer size to 8 bytes
@@ -844,7 +850,7 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 
 	setLowSpeed(spiHandle);
 
-	enableAutoRetransmitSlow(spiHandle);
+	//enableAutoRetransmitSlow(spiHandle);
 
 	//go to TX mode and be ready to listen
 	powerUpTX(spiHandle);
