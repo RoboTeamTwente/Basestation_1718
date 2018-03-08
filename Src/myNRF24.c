@@ -170,7 +170,7 @@ uint8_t irqRead(SPI_HandleTypeDef* spiHandle){
 
 //write to a register and output debug info to the terminal
 void writeRegDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data){
-	if(reg == 	RX_PW_P0 || reg == RX_ADDR_P1 || reg == TX_ADDR){
+	if(reg == 	RX_ADDR_P0 || reg == RX_ADDR_P1 || reg == TX_ADDR){
 		TextOut("Error, this is a multi-byte register. use writeRegMultiDebug instead\n");
 	}
 	else if(reg > FEATURE || reg == OBSERVE_TX || reg == RPD || (reg > FIFO_STATUS && reg < DYNPD)){
