@@ -67,36 +67,25 @@ void fun2out(){
 
 
 //set a specific bit in a byte to a 1 or a 0
-uint8_t setBit(uint8_t byte, uint8_t position, uint8_t value){
-	uint8_t result;
-
-	if(value == 1){
-		result = byte | (1 << position); //write a 1 on the right position
-	}
-	else if(value == 0){
-		uint8_t temp = 0xFF;
-		temp -= (1 << position); //have a byte with all 1's, except the position you write a 0 to
-		result = byte & temp; // write a zero to the right position
-	}
-	else{
-		TextOut("Error! value should be 1 or 0 \n");
-		result = 0xFF;
-	}
-
-	return result;
+uint8_t setBit(uint8_t byte, uint8_t position, uint8_t bitValue){
+	/*
+	 * A Bit consists of 8 Bits, where the right-most (least significant) Bit
+	 * starts with position 0.
+	 * This function allows to set (1) or clear (0) a speficif Bit of a byte (uint8_t).
+	 *
+	 * A read on "Bitwise Operators in C" is advised.
+	 * We keep this function as a layer of abstraction and it is suggested to
+	 * use this function where it can increase the readability of code.
+	 */
+	if(bitValue)
+		return byte|(1<<position); //set bit
+	else
+		return byte&~(1<<position); //clear bit
 }
 
 //check if a specific bit in a byte is 1
 uint8_t readBit(uint8_t byte, uint8_t position){
-	uint8_t mask = 0;
-	mask = mask | (1 << position);
-	byte = byte & mask;
-	if(byte == 0){
-		return 0;
-	}
-	else{
-		return 1;
-	}
+	return byte & (1<<position);
 }
 
 //*****************************low level library********************************//
@@ -150,22 +139,9 @@ void ceLow(SPI_HandleTypeDef* spiHandle){
 //read the interrupt pin
 uint8_t irqRead(SPI_HandleTypeDef* spiHandle){
 	if(spiHandle->Instance == SPI1)
-		if(!HAL_GPIO_ReadPin(GPIOA, IRQ_SPI1_Pin)){
-		//if (HAL_GPIO_ReadPin(IRQ_SPI1_GPIO_Port, IRQ_SPI1_Pin)){
-			return 1;
-		}
-		else{
-			return 0;
-		}
-	else{
-		if(!HAL_GPIO_ReadPin(GPIOD, IRQ_SPI3_Pin)){
-		//if (HAL_GPIO_ReadPin(IRQ_SPI1_GPIO_Port, IRQ_SPI1_Pin)){
-			return 1;
-		}
-		else{
-			return 0;
-		}
-	}
+		return !HAL_GPIO_ReadPin(GPIOA, IRQ_SPI1_Pin);
+	else
+		return !HAL_GPIO_ReadPin(GPIOD, IRQ_SPI3_Pin);
 }
 
 //write to a register and output debug info to the terminal
@@ -209,15 +185,15 @@ void writeRegDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data){
 
 //write to a register
 void writeReg(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data){
-	if(reg == 0x0A || reg == 0x0B || reg == 0x10){
+	if(reg == 	RX_ADDR_P0 || reg == RX_ADDR_P1 || reg == TX_ADDR){
 		TextOut("Error, this is a multi-byte register. use writeRegMulti instead\n");
 	}
-	else if(reg > 0x1D || reg == 0x08 || reg == 0x09 || (reg >= 0x17 &&reg <= 0x1B)){
+	else if(reg > FEATURE || reg == OBSERVE_TX || reg == RPD || (reg > FIFO_STATUS && reg < DYNPD)){
 		TextOut("Error, invalid register. It is either read only or non-existing\n");
 	}
 	else{
-		  //commands can only be given after a falling edge of the nss pin
-		  //see figure 23 of datasheet
+		//commands can only be given after a falling edge of the nss pin
+		//see figure 23 of datasheet
 		nssLow(spiHandle);
 
 		uint8_t sendData = setBit(reg, 5, 1); // W_REGISTER = 001A AAAA -> AAAAA = 5 bit register address
@@ -274,35 +250,46 @@ void writeRegMultiDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* data
 	}
 }
 
-//write to a multi-byte register
-void writeRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* data, uint8_t size){
-	if(!(reg == 0x0A || reg == 0x0B || reg == 0x10)){
-		TextOut("Error, invalid register. It is either read only, single byte or non-existingd\n");
+/**
+  * @brief  Write to a multi-byte register.
+  * @param  pointer to spi handle
+  * @param  register to write to
+  * @param  Array of bytes with data to write
+  * @param  Size of Data Array
+  * @retval Error Status. No error: 0; on error: -1
+  */
+int8_t writeRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* pdata, uint8_t size){
+	if(!(reg == RX_ADDR_P0 || reg == RX_ADDR_P1 || reg == TX_ADDR)){
+		//TextOut("Error, invalid register. It is either read only, single byte or non-existing.\n");
+		return -1;
 	}
 	else if(size > 5){
-		TextOut("Error, size can never be bigger than 5\n");
+		//TextOut("Error, size can never be bigger than 5\n");
+		return -1;
 	}
-	else{
-		//commands can only be given after a falling edge of the nss pin
-		//see figure 23 of datasheet
-		nssLow(spiHandle);
+	//commands can only be given after a falling edge of the nss pin
+	//see figure 23 of datasheet
+	nssLow(spiHandle);
 
-		uint8_t command = setBit(reg, 5, 1); // W_REGISTER = 001A AAAA -> AAAAA = 5 bit register address
-		uint8_t receiveData;
+	uint8_t cmd_w_register = reg | (1<<5); //the W_REGISTER command is the register number with an appended 1 at position 5.
+	uint8_t receiveData;
 
-		//comand: write to register reg and get status register
-		HAL_SPI_TransmitReceive(spiHandle, &command, &receiveData, 1, 100);
+	//comand: write to register reg and get status register
+	if(HAL_SPI_TransmitReceive(spiHandle, &cmd_w_register, &receiveData, 1, 100) != HAL_OK)
+		return -1; //SPI error
 
-		//Do not remove the i
-		//it invokes divine intervention
-		int i = 0;
+	//Do not remove the i
+	//it invokes divine intervention
+	//int i = 0;
+	//Sorry, but I'm removing the i. My mom says superstition brings misfortune... ~Ulf S.
 
-		//send data to the register
-		HAL_SPI_TransmitReceive(spiHandle, data, &receiveData, size, 100);
+	//send data to the register
+	if(HAL_SPI_TransmitReceive(spiHandle, pdata, &receiveData, size, 100) != HAL_OK)
+		return -1; //SPI error
 
-		nssHigh(spiHandle);
-		//HAL_Delay(10);
-	}
+	nssHigh(spiHandle);
+	//HAL_Delay(10);
+	return 0;
 }
 
 //read a register and output debug info to the terminal
@@ -443,7 +430,7 @@ void readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer
 //--------------------initialization and configuration--------------------//
 
 //reset to reset value on page 54
-void reset(SPI_HandleTypeDef* spiHandle){
+void softResetRegisters(SPI_HandleTypeDef* spiHandle){
 	uint8_t multRegData[5] = {0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
 
 	// see page 54 and further for reset values
@@ -472,9 +459,9 @@ void reset(SPI_HandleTypeDef* spiHandle){
 	writeReg(spiHandle, 0x14, 0x00); // RX_PW_P3
 	writeReg(spiHandle, 0x15, 0x00); // RX_PW_P4
 	writeReg(spiHandle, 0x16, 0x00); // RX_PW_P5
-	//reg 17-1B are read only or non-existing
-	writeReg(spiHandle, 0x15, 0x00); // DYNPD
-	writeReg(spiHandle, 0x16, 0x00); // FEATURE
+	//reg 0x18 to 0x1B are undocumented test registers. Don't write to them!
+	writeReg(spiHandle, DYNPD, 0x00); // DYNPD
+	writeReg(spiHandle, FEATURE, 0x00); // FEATURE
 
 }
 
@@ -484,16 +471,23 @@ void reset(SPI_HandleTypeDef* spiHandle){
 //flush TX and RX buffer
 void NRFinit(SPI_HandleTypeDef* spiHandle){
 	//reset system
-	reset(spiHandle);
+
+	/*
+	 * I don't see a need for reset all register values to their default values
+	 * when the system has just booted up. The datasheet already promises those values during boot-up.
+	 * A call to the softResetRegisters() function is only needed when we want to simulate a reboot of the nRF module
+	 * without actually turning it on and off.
+	 */
+	//softResetRegisters(spiHandle);
 
 	//enable RX pipe 0 and 1, disable all other pipes
-	writeReg(spiHandle, 0x02, 0x03);
+	writeReg(spiHandle, EN_RXADDR, 0x03);
 
 	//set RX pipe with of pipe 0 to 1 byte.
-	writeReg(spiHandle, 0x11, 0x01);
+	writeReg(spiHandle, RX_PW_P0, 0x01);
 
 	//set RX pipe with of pipe 1 to 1 byte.
-	writeReg(spiHandle, 0x12, 0x01);
+	writeReg(spiHandle, RX_PW_P1, 0x01);
 
 	flushRX(spiHandle);
 	flushTX(spiHandle);
@@ -511,14 +505,14 @@ void setRXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5], uint8_t pipe
 		TextOut("Error: max pipe number = 5\n");
 	}
 	else{
-		writeRegMulti(spiHandle, 0x0A + pipeNumber, address, 5);
+		writeRegMulti(spiHandle, RX_ADDR_P0 + pipeNumber, address, 5);
 	}
 }
 
 //set own address note: only data pipe 0 is used in this implementation
 void setTXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5]){
-	writeRegMulti(spiHandle, 0x0A, address, 5); // set RX address pipe 0 for auto acks
-	writeRegMulti(spiHandle, 0x10, address, 5); // set TX address
+	writeRegMulti(spiHandle, RX_ADDR_P0, address, 5); // set RX address pipe 0 for auto acks
+	writeRegMulti(spiHandle, TX_ADDR, address, 5); // set TX address
 }
 
 void setFreqChannel(SPI_HandleTypeDef* spiHandle, uint8_t channelNumber){
@@ -526,7 +520,7 @@ void setFreqChannel(SPI_HandleTypeDef* spiHandle, uint8_t channelNumber){
 		TextOut("Error, max channelNumber = 127\n");
 	}
 	else{
-		writeReg(spiHandle, 0x05, channelNumber);
+		writeReg(spiHandle, RF_CH, channelNumber);
 	}
 }
 
@@ -539,7 +533,7 @@ void enableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
 	else{
 		uint8_t reg02 = readReg(spiHandle, 0x02);
 		reg02 = setBit(reg02, pipeNumber, 1);
-		writeReg(spiHandle, 0x02, reg02);
+		writeReg(spiHandle, EN_RXADDR, reg02);
 	}
 }
 
@@ -555,8 +549,8 @@ void disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
 	else{
 		uint8_t reg02 = readReg(spiHandle, 0x02);
 		reg02 = setBit(reg02, pipeNumber, 0);
-		writeReg(spiHandle, 0x02, reg02);// disable pipe
-		writeReg(spiHandle, 0x11 + pipeNumber, 0); //set buffer size to 0;
+		writeReg(spiHandle, EN_RXADDR, reg02);// disable pipe
+		writeReg(spiHandle, RX_PW_P0 + pipeNumber, 0); //set buffer size to 0;
 	}
 }
 
@@ -573,7 +567,7 @@ void setDataPipeArray(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable[6]){
 				reg02 = setBit(reg02, i, 1);
 			}
 		}
-		writeReg(spiHandle, 0x02, reg02); //what is the hardcoded number? -- apparently the EN_RXADDR register (datasheet page 54)
+		writeReg(spiHandle, EN_RXADDR, reg02); //what is the hardcoded number? -- apparently the EN_RXADDR register (datasheet page 54)
 	}
 }
 
@@ -586,10 +580,10 @@ void setRXbufferSize(SPI_HandleTypeDef* spiHandle, uint8_t size){
 		uint8_t reg02 = readReg(spiHandle, 0x02);
 		for(int i = 0; i < 6; i++){
 			if(readBit(reg02, i)){
-				writeReg(spiHandle, 0x11 + i, size);
+				writeReg(spiHandle, RX_PW_P0 + i, size);
 			}
 			else{
-				writeReg(spiHandle, 0x11 + i, 0);
+				writeReg(spiHandle, RX_PW_P0 + i, 0);
 			}
 		}
 	}
@@ -602,7 +596,7 @@ void TXinterrupts(SPI_HandleTypeDef* spiHandle){
 	reg00 = setBit(reg00, 6, 1);
 	reg00 = setBit(reg00, 5, 0);
 	reg00 = setBit(reg00, 4, 0);
-	writeReg(spiHandle, 0x00, reg00);
+	writeReg(spiHandle, CONFIG, reg00);
 }
 
 //make sure interrupts for the RX functions are enabled
@@ -612,7 +606,7 @@ void RXinterrupts(SPI_HandleTypeDef* spiHandle){
 	reg00 = setBit(reg00, 6, 0);
 	reg00 = setBit(reg00, 5, 1);
 	reg00 = setBit(reg00, 4, 1);
-	writeReg(spiHandle, 0x00, reg00);
+	writeReg(spiHandle, CONFIG, reg00);
 }
 
 //---------------------------------modes----------------------------------//
@@ -620,24 +614,24 @@ void RXinterrupts(SPI_HandleTypeDef* spiHandle){
 //power down the device. SPI stays active.
 void powerDown(SPI_HandleTypeDef* spiHandle){
 	ceLow(spiHandle); //go to standby mode
-	uint8_t reg00 = readReg(spiHandle, 0x00);
+	uint8_t reg_config = readReg(spiHandle, CONFIG);
 
 	//set power bit: bit 1 of reg 0
-	reg00 = setBit(reg00, 0x01, 0);
+	reg_config = setBit(reg_config, 1, 0);
 
-	writeReg(spiHandle, 0x00, reg00);
+	writeReg(spiHandle, CONFIG, reg_config);
 }
 
 //go to standby. SPI stays active. consumes more power, but can go to TX or RX quickly
 void powerUp(SPI_HandleTypeDef* spiHandle){
 	ceLow(spiHandle);
 
-	uint8_t reg00 = readReg(spiHandle, 0x00);
+	uint8_t reg_config = readReg(spiHandle, CONFIG);
 
 	//set power up bit: bit 2 of reg 0.
-	reg00 = reg00 | 0x02;
+	reg_config = reg_config | 0x02;
 
-	writeReg(spiHandle, 0x00, reg00);
+	writeReg(spiHandle, CONFIG, reg_config);
 
 }
 
@@ -655,13 +649,13 @@ void powerUpTX(SPI_HandleTypeDef* spiHandle){
 	reg00 = setBit(reg00, 0, 0);
 
 
-	writeReg(spiHandle, 0x00, reg00);
+	writeReg(spiHandle, CONFIG, reg00);
 
 }
 
 //device power up, and be ready to receive bytes.
 void powerUpRX(SPI_HandleTypeDef* spiHandle){
-	uint8_t reg00 = readReg(spiHandle, 0x00);
+	uint8_t reg00 = readReg(spiHandle, CONFIG);
 
 	flushRX(spiHandle);
 
@@ -670,7 +664,7 @@ void powerUpRX(SPI_HandleTypeDef* spiHandle){
 	//set RX/TX to RX: bit 0 to 1
 	reg00 = setBit(reg00, 0, 1);
 
-	writeReg(spiHandle, 0x00, reg00);
+	writeReg(spiHandle, CONFIG, reg00);
 
 	//put CE pin high ->  start listening
 	ceHigh(spiHandle);

@@ -18,33 +18,37 @@
 #include "spi.h"
 
 //defining registers
+//see datasheet page 54 and following
 enum nrfRegister {
-	CONFIG,
-	EN_AA,
+	//feel free to complete
+	//the values in the comments.
+	//they are just increments unless they are overwritten (DYNPD)
+	CONFIG, //0x00
+	EN_AA, //0x01
 	EN_RXADDR,
 	SETUP_AW,
 	SETUP_RETR,
-	RF_CH,
+	RF_CH, //0x05
 	RF_SETUP,
 	STATUS,
 	OBSERVE_TX,
 	RPD,
-	RX_ADDR_P0,
+	RX_ADDR_P0, //0x0A
 	RX_ADDR_P1,
 	RX_ADDR_P2,
 	RX_ADDR_P3,
 	RX_ADDR_P4,
-	RX_ADDR_P5,
-	TX_ADDR,
+	RX_ADDR_P5, //0x0F
+	TX_ADDR, //0x10
 	RX_PW_P0,
 	RX_PW_P1,
 	RX_PW_P2,
 	RX_PW_P3,
 	RX_PW_P4,
 	RX_PW_P5,
-	FIFO_STATUS,
-	DYNPD=0x1C,
-	FEATURE
+	FIFO_STATUS, //0x17
+	DYNPD=0x1C, //0x1C
+	FEATURE //0x1D
 
 };
 
@@ -113,7 +117,7 @@ void writeReg(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data);
 void writeRegMultiDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* data, uint8_t size);
 
 //write to a multi-byte register
-void writeRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* data, uint8_t size);
+int8_t writeRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* data, uint8_t size);
 
 //read a register and output debug info to the terminal
 uint8_t readRegDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg);
@@ -138,7 +142,7 @@ void readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer
 //--------------------initialization and configuration--------------------//
 
 //reset to reset value on page 54
-void reset(SPI_HandleTypeDef* spiHandle);
+void softResetRegisters(SPI_HandleTypeDef* spiHandle);
 
 //initialize the system:
 //reset it and enable pipe 1 and 0
