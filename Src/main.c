@@ -86,13 +86,6 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	/*
-	 * Why "madeUpPacket"? Is this an "invented" and totally made-up packet?
-	 * As I understand it, it is structured data which we are about to send as payload with the NRF module.
-	 * I believe there could be a better name for this. "madeUp" sounds like it's fake and untrue.
-	 *
-	 * Edit: Oh, I get it. It fakes a USB packet.
-	 */
 	uint8_t madeUpPacket[12];
 
   /* USER CODE END 1 */
@@ -121,220 +114,212 @@ int main(void)
 
 
 
-  fun2();
-  //nssHigh(&hspi3); //why??
-  //ceLow(&hspi3);
-  uint8_t address[5] = {0x12, 0x34, 0x56, 0x78, 0x97};
-  initBase(&hspi3, 78  , address);
-  GPIO_PinState button6;
-  GPIO_PinState button5;
-  GPIO_PinState button4;
+	fun2();
+	uint8_t address[5] = {0x12, 0x34, 0x56, 0x78, 0x97};
+	initBase(&hspi3, 78  , address);
+	GPIO_PinState button6;
+	GPIO_PinState button5;
+	GPIO_PinState button4;
 
-  flushRX(&hspi3);
-  HAL_Delay(10);
-  flushTX(&hspi3);
-  HAL_Delay(10);
+	flushRX(&hspi3);
+	HAL_Delay(10);
+	flushTX(&hspi3);
+	HAL_Delay(10);
 
-  /* never used:
-  GPIO_PinState buttom3;
-  GPIO_PinState buttom2;
-  GPIO_PinState prevButtom6;
-  GPIO_PinState prevButtom5;
-  */
-  uint8_t remote = 0;
+	uint8_t remote = 0;
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_Delay(1000);
+	HAL_Delay(1000);
 
-  int id = 2;
-  int robot_vel = 0;
-  int ang = 0;
-  uint8_t rot_cclockwise = 0;
-  int w_vel = 0; //w=omega velocity: rotational velocity.
-  uint8_t kick_force = 0;
-  uint8_t do_kick = 0;
-  uint8_t chip = 0;
-  uint8_t forced = 0;
-  uint8_t dribble_cclockwise = 0;
-  uint8_t dribble_vel = 0xff;
-  // never used: uint8_t* byteArr = 0;
-  uint8_t prevBlue = 0;
-  uint8_t blue = 0;
-  // never used: int cnt = 0;
+	int id = 2;
+	int robot_vel = 0;
+	int ang = 0;
+	uint8_t rot_cclockwise = 0;
+	int w_vel = 0; //w=omega velocity: rotational velocity.
+	uint8_t kick_force = 0;
+	uint8_t do_kick = 0;
+	uint8_t chip = 0;
+	uint8_t forced = 0;
+	uint8_t dribble_cclockwise = 0;
+	uint8_t dribble_vel = 0xff;
+	// never used: uint8_t* byteArr = 0;
+	uint8_t prevBlue = 0;
+	uint8_t blue = 0;
+	// never used: int cnt = 0;
 
-  uint8_t debug_transmit_repeatedly = 1;
+	uint8_t debug_transmit_repeatedly = 1;
 
-  uint8_t pktNum = 0;
-  uint8_t toggleMe = 1;
+	uint8_t pktNum = 0;
+	uint8_t toggleMe = 1;
 
-  while (1)
-  {
-	  button6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
-	  button5 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
-	  button4 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11);
-	  //never used: buttom3 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_13);
-	  //never used: buttom2 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_15);
-	  blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin);
+	while (1)
+	{
+		button6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
+		button5 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
+		button4 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11);
+		//never used: buttom3 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_13);
+		//never used: buttom2 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_15);
+		blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin);
 
-	  if(debug_transmit_repeatedly == 1) {
-
-
-		  /*
-		   * Apparently we need to write to the STATUS register
-		   * to make the Basestation keep sending packets in the setting of
-		   * sending two different packets in an alternating manner.
-		   *
-		   * Next thing to find out is: which Bit(s) do we need to set in the STATUS register
-		   * in order to do that -- and why?
-		   */
-		  // see page 54 and further for reset values
-		  writeReg(&hspi3, 0x07, 0x7E); // STATUS //weird things with clear interrups going on here. see datashet
+		if(debug_transmit_repeatedly == 1) {
 
 
-		  pktNum++;
-
-		  if(toggleMe){
-			  //TextOut("Sending a packet to Robot 2.");
-			  createRobotPacket(id, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
-			  toggleMe = 0;
-		  } else {
-			  //TextOut("Sending a packet to Robot 3.");
-			  createRobotPacket(3, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
-			  toggleMe = 1;
-		  }
-
-		  sendPacketPart1(&hspi3, madeUpPacket);
-		  HAL_Delay(200);
-		  //fun(); //delay with a LED animation
-		  continue; //skip to the next loop iteration
-	  }
-	  if(blue == 1 && blue != prevBlue){
-		  //initBase(&hspi3, 0x2A, address);
-		  HAL_Delay(100);
-		  //printAllRegisters(&hspi3);
-	  }
-
-	  if(!button6){
-		  TextOut("forward");
-		  remote = 1;
-		  robot_vel = 1000;
-		  ang = 0;
-		  w_vel = 0;
-		  //dribble_vel = 7;
-		  createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
+			/*
+			 * Apparently we need to write to the STATUS register
+			 * to make the Basestation keep sending packets in the setting of
+			 * sending two different packets in an alternating manner.
+			 *
+			 * Next thing to find out is: which Bit(s) do we need to set in the STATUS register
+			 * in order to do that -- and why?
+			 */
+			// see page 54 and further for reset values
+			writeReg(&hspi3, 0x07, 0x7E);
 
 
-	  }
-	  else if(!button5){
-		  TextOut("sidewards");
-		  /*remote = 1;
+			pktNum++;
+
+			if(toggleMe){
+				//TextOut("Sending a packet to Robot 2.");
+				createRobotPacket(id, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
+				toggleMe = 0;
+			} else {
+				//TextOut("Sending a packet to Robot 3.");
+				createRobotPacket(3, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
+				toggleMe = 1;
+			}
+
+			sendPacketPart1(&hspi3, madeUpPacket);
+			HAL_Delay(200);
+			//fun(); //delay with a LED animation
+			continue; //skip to the next loop iteration
+		}
+		if(blue == 1 && blue != prevBlue){
+			//initBase(&hspi3, 0x2A, address);
+			HAL_Delay(100);
+			//printAllRegisters(&hspi3);
+		}
+
+		if(!button6){
+			TextOut("forward");
+			remote = 1;
+			robot_vel = 1000;
+			ang = 0;
+			w_vel = 0;
+			//dribble_vel = 7;
+			createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
+
+
+		}
+		else if(!button5){
+			TextOut("sidewards");
+			/*remote = 1;
 		  robot_vel = 250;
 		  ang = 256;
 		  w_vel = 0;
 		  dribble_vel = 0;
 		  createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
-	  */
-		  remote = 1;
-		  kick_force = 250;
-		  chip = 0;
-		  createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
-	  }
-	  else if(!button4){
-		  TextOut("turning");
-		  remote = 1;
-		  robot_vel = 0;
-		  w_vel = 360;
-		  rot_cclockwise = 1;
-		  createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
+			 */
+			remote = 1;
+			kick_force = 250;
+			chip = 0;
+			createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
+		}
+		else if(!button4){
+			TextOut("turning");
+			remote = 1;
+			robot_vel = 0;
+			w_vel = 360;
+			rot_cclockwise = 1;
+			createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
 
-	  }
-	  else{
-		  //TextOut("turning");
-		  //remote = 1;
-		  /*
-		   * Apparently this section should reset the Robot to an idle state after it was controlled with the buttons on the board.
-		   * However, it would actually be executed whenever no button was pressed with every round of the main loop.
-		   * That means it is also executed when the board is controlled over USB.
-		   * This does not seem to be a big issue, since the varables set here are all related to creating a packet which is meant to
-		   * overwrite the usbData packet, which, however, is never overwritten unless remote=1.
-		   *
-		   * Therefore: in such a case we are doing useless memory writes here which are never read.
-		   *
-		   */
-		  w_vel = 000;
-		  rot_cclockwise = 1;
-		  robot_vel = 0000;
-		  ang = 0;
-		  kick_force = 0;
-		  createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
+		}
+		else{
+			//TextOut("turning");
+			//remote = 1;
+			/*
+			 * Apparently this section should reset the Robot to an idle state after it was controlled with the buttons on the board.
+			 * However, it would actually be executed whenever no button was pressed with every round of the main loop.
+			 * That means it is also executed when the board is controlled over USB.
+			 * This does not seem to be a big issue, since the varables set here are all related to creating a packet which is meant to
+			 * overwrite the usbData packet, which, however, is never overwritten unless remote=1.
+			 *
+			 * Therefore: in such a case we are doing useless memory writes here which are never read.
+			 *
+			 */
+			w_vel = 000;
+			rot_cclockwise = 1;
+			robot_vel = 0000;
+			ang = 0;
+			kick_force = 0;
+			createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
 
-	  }
+		}
 
 
-	  if(remote == 1){
+		if(remote == 1){
 
-		  /*
-		   * I see that remote is set to 1 whenever a button on the board is pressed.
-		   * But it is never reset to 0.
-		   * Does that mean, that the board will stay in manual mode (button controlled) until reset?
-		   * If that is the case, then we could ignore any USB data anyway and circumvent the below mentioned possible
-		   * flaw for a race condition (which would be caused when the button control is used while USB data is received at the same time).
-		   */
-		  for(int i = 0; i < 12; i++){
-			  /*
-			   * why are you overwriting the usbData when it appears you could just
-			   * call sendPacketPart1() with madeUpPacket instead?
-			   *
-			   * usbData seems to be an external array, possibly overwritten by an interrupt service routine,
-			   * so it doesn't seem to be thread safe to overwrite this data. It might cause a race condition:
-			   * it might be overwritten by an interrupt while you attempt to overwrite it or after you
-			   * were overwriting it and before the call of sendPacketPart1().
-			   *
-			   */
-			  usbData[i] = madeUpPacket[i];
+			/*
+			 * I see that remote is set to 1 whenever a button on the board is pressed.
+			 * But it is never reset to 0.
+			 * Does that mean, that the board will stay in manual mode (button controlled) until reset?
+			 * If that is the case, then we could ignore any USB data anyway and circumvent the below mentioned possible
+			 * flaw for a race condition (which would be caused when the button control is used while USB data is received at the same time).
+			 */
+			for(int i = 0; i < 12; i++){
+				/*
+				 * why are you overwriting the usbData when it appears you could just
+				 * call sendPacketPart1() with madeUpPacket instead?
+				 *
+				 * usbData seems to be an external array, possibly overwritten by an interrupt service routine,
+				 * so it doesn't seem to be thread safe to overwrite this data. It might cause a race condition:
+				 * it might be overwritten by an interrupt while you attempt to overwrite it or after you
+				 * were overwriting it and before the call of sendPacketPart1().
+				 *
+				 */
+				usbData[i] = madeUpPacket[i];
 
-		  }
-		  //usbData[7] = 0;
-		  usbLength = 12;
-		  /*for(int i = 0; i < 8; i++){
+			}
+			//usbData[7] = 0;
+			usbLength = 12;
+			/*for(int i = 0; i < 8; i++){
 			  sprintf(smallStrBuffer, "byte %i: %x\n", i, usbData[i]);
 			  TextOut(smallStrBuffer);
 		  }*/
-		  sendPacketPart1(&hspi3, usbData);
-		  usbLength = 0;
-		  HAL_Delay(10);
-	  }
+			sendPacketPart1(&hspi3, usbData);
+			usbLength = 0;
+			HAL_Delay(10);
+		}
 
 
-	  if(usbLength == 12){
+		if(usbLength == 12){
 
-		  sendPacketPart1(&hspi3, usbData);
-		  usbLength = 0;
-	  }
-
-
-
-	  if(usbLength != 0){
-		  //fun();
-	  }
+			sendPacketPart1(&hspi3, usbData);
+			usbLength = 0;
+		}
 
 
-	  //was never read: prevButtom6 = buttom6;
-	  //was never read: prevButtom5 = buttom5;
-	  prevBlue = blue;
+
+		if(usbLength != 0){
+			//fun();
+		}
 
 
-	  //waitAck(&hspi3, usbData[0] >> 4); //note: this prints ACK messages with TextOut()
+		//was never read: prevButtom6 = buttom6;
+		//was never read: prevButtom5 = buttom5;
+		prevBlue = blue;
+
+
+		//waitAck(&hspi3, usbData[0] >> 4); //note: this prints ACK messages with TextOut()
 
 
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
 
-  }
+	}
   /* USER CODE END 3 */
 
 }
@@ -410,10 +395,10 @@ void SystemClock_Config(void)
 void _Error_Handler(char *file, int line)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  while(1)
-  {
-  }
+	/* User can add his own implementation to report the HAL error return state */
+	while(1)
+	{
+	}
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -428,7 +413,7 @@ void _Error_Handler(char *file, int line)
 void assert_failed(uint8_t* file, uint32_t line)
 { 
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
+	/* User can add his own implementation to report the file name and line number,
     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }

@@ -17,6 +17,36 @@
 #include "stm32f3xx_hal.h"
 #include "spi.h"
 
+//defining registers
+enum nrfRegister {
+	CONFIG,
+	EN_AA,
+	EN_RXADDR,
+	SETUP_AW,
+	SETUP_RETR,
+	RF_CH,
+	RF_SETUP,
+	STATUS,
+	OBSERVE_TX,
+	RPD,
+	RX_ADDR_P0,
+	RX_ADDR_P1,
+	RX_ADDR_P2,
+	RX_ADDR_P3,
+	RX_ADDR_P4,
+	RX_ADDR_P5,
+	TX_ADDR,
+	RX_PW_P0,
+	RX_PW_P1,
+	RX_PW_P2,
+	RX_PW_P3,
+	RX_PW_P4,
+	RX_PW_P5,
+	FIFO_STATUS,
+	DYNPD=0x1C,
+	FEATURE
+
+};
 
 typedef struct dataPacket {
   uint8_t robotID; // 0 to 15
