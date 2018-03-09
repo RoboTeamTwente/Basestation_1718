@@ -434,31 +434,31 @@ void softResetRegisters(SPI_HandleTypeDef* spiHandle){
 	uint8_t multRegData[5] = {0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
 
 	// see page 54 and further for reset values
-	writeReg(spiHandle, 0x00, 0x08); // CONFIG
-	writeReg(spiHandle, 0x01, 0x3F); // EN_AA
-	writeReg(spiHandle, 0x02, 0x03); // EN_RXADDR
-	writeReg(spiHandle, 0x03, 0x03); // SETUP_AW
-	writeReg(spiHandle, 0x04, 0x03); // SETUP_RETR
-	writeReg(spiHandle, 0x05, 0x02); // RF_CH
-	writeReg(spiHandle, 0x06, 0x0F); // RF_SETUP
-	writeReg(spiHandle, 0x07, 0x7E); // STATUS //weird things with clear interrups going on here. see datashet
+	writeReg(spiHandle, CONFIG, 0x08); // CONFIG
+	writeReg(spiHandle, EN_AA, 0x3F); // EN_AA
+	writeReg(spiHandle, EN_RXADDR, 0x03); // EN_RXADDR
+	writeReg(spiHandle, SETUP_AW, 0x03); // SETUP_AW
+	writeReg(spiHandle, SETUP_RETR, 0x03); // SETUP_RETR
+	writeReg(spiHandle, RF_CH, 0x02); // RF_CH
+	writeReg(spiHandle, RF_SETUP, 0x0F); // RF_SETUP
+	writeReg(spiHandle, STATUS, 0x7E); // STATUS //weird things with clear interrups going on here. see datashet
 	//register 0x08 and 0x09 are read only
-	writeRegMulti(spiHandle, 0x0A, multRegData, 5); // RX_ADDR_P0
+	writeRegMulti(spiHandle, RX_ADDR_P0, multRegData, 5); // RX_ADDR_P0
 
 	for(int i = 0; i < 5; i++){multRegData[i] = 0xC2;}
-	writeRegMulti(spiHandle, 0x0B, multRegData, 5); // RX_ADDR_P1
-	writeReg(spiHandle, 0x0C, 0xC3); // RX_ADDR_P2
-	writeReg(spiHandle, 0x0D, 0xC4); // RX_ADDR_P3
-	writeReg(spiHandle, 0x0E, 0xC5); // RX_ADDR_P4
-	writeReg(spiHandle, 0x0F, 0xC6); // RX_ADDR_P5
+	writeRegMulti(spiHandle, RX_ADDR_P1, multRegData, 5); // RX_ADDR_P1
+	writeReg(spiHandle, RX_ADDR_P2, 0xC3); // RX_ADDR_P2
+	writeReg(spiHandle, RX_ADDR_P3, 0xC4); // RX_ADDR_P3
+	writeReg(spiHandle, RX_ADDR_P4, 0xC5); // RX_ADDR_P4
+	writeReg(spiHandle, RX_ADDR_P5, 0xC6); // RX_ADDR_P5
 	for(int i = 0; i < 5; i++){multRegData[i] = 0xE7;}
-	writeRegMulti(spiHandle, 0x10, multRegData, 5); // TX_ADDR
-	writeReg(spiHandle, 0x11, 0x00); // RX_PW_P0
-	writeReg(spiHandle, 0x12, 0x00); // RX_PW_P1
-	writeReg(spiHandle, 0x13, 0x00); // RX_PW_P2
-	writeReg(spiHandle, 0x14, 0x00); // RX_PW_P3
-	writeReg(spiHandle, 0x15, 0x00); // RX_PW_P4
-	writeReg(spiHandle, 0x16, 0x00); // RX_PW_P5
+	writeRegMulti(spiHandle, TX_ADDR, multRegData, 5); // TX_ADDR
+	writeReg(spiHandle, RX_PW_P0, 0x00); // RX_PW_P0
+	writeReg(spiHandle, RX_PW_P1, 0x00); // RX_PW_P1
+	writeReg(spiHandle, RX_PW_P2, 0x00); // RX_PW_P2
+	writeReg(spiHandle, RX_PW_P3, 0x00); // RX_PW_P3
+	writeReg(spiHandle, RX_PW_P4, 0x00); // RX_PW_P4
+	writeReg(spiHandle, RX_PW_P5, 0x00); // RX_PW_P5
 	//reg 0x18 to 0x1B are undocumented test registers. Don't write to them!
 	writeReg(spiHandle, DYNPD, 0x00); // DYNPD
 	writeReg(spiHandle, FEATURE, 0x00); // FEATURE
@@ -481,7 +481,7 @@ void NRFinit(SPI_HandleTypeDef* spiHandle){
 	//softResetRegisters(spiHandle);
 
 	//enable RX pipe 0 and 1, disable all other pipes
-	writeReg(spiHandle, EN_RXADDR, 0x03);
+	writeReg(spiHandle, EN_RXADDR, ERX_P0|ERX_P1);
 
 	//set RX pipe with of pipe 0 to 1 byte.
 	writeReg(spiHandle, RX_PW_P0, 0x01);
@@ -555,20 +555,9 @@ void disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
 }
 
 //choose which datapipes to use
-//note that pipeNumber[0] should always be 1, because this pipe is used for acks
-void setDataPipeArray(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable[6]){
-	if(pipeEnable[0] == 0){
-		TextOut("Error, pipe 0 reserved for acks\n");
-	}
-	else{
-		uint8_t reg02 = 0; //what is this purpose of this variable? -- the value which will be written to Register 0x02...
-		for(int i = 0; i < 6; i++){
-			if(pipeEnable[i] == 1){
-				reg02 = setBit(reg02, i, 1);
-			}
-		}
-		writeReg(spiHandle, EN_RXADDR, reg02); //what is the hardcoded number? -- apparently the EN_RXADDR register (datasheet page 54)
-	}
+//Check out page 54 (Register Map) in the datasheet.
+void setDataPipeArray(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable){
+	writeReg(spiHandle, EN_RXADDR, pipeEnable);
 }
 
 //set the size of the RX buffer in bytes
@@ -716,7 +705,7 @@ void sendData(SPI_HandleTypeDef* spiHandle, uint8_t data[], uint8_t length){
 
 	//send over air
 
-	//is it save to set CE high here (disables transmitter module)? Can we be sure that all the data is already transmitted?
+	//is it save to set CE (chip enable) high here (disables transmitter module)? Can we be sure that all the data is already transmitted?
 	ceHigh(spiHandle);
 
 
@@ -800,8 +789,8 @@ void initRobo(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 	setFreqChannel(spiHandle, freqChannel);
 
 	//enable pipe 0 and 1, diabable all other pipes
-	uint8_t dataPipeArray[6] = {1, 1, 0, 0, 0, 0};
-	setDataPipeArray(spiHandle, dataPipeArray);
+	uint8_t dataPipes = 0b0000011; //the Bits from right to left define which data pipes to activate, starting from pipe 0 on the rightmost bit.
+	setDataPipeArray(spiHandle, dataPipes);
 
 	//set the RX buffer size to 8 bytes
 	setRXbufferSize(spiHandle, 8);
@@ -828,19 +817,19 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 	setFreqChannel(spiHandle, freqChannel);
 
 	//enable pipe 0, diabable all other pipes
-	uint8_t dataPipeArray[6] = {1, 0, 0, 0, 0, 0};
+	//uint8_t dataPipeArray[6] = {1, 0, 0, 0, 0, 0};
 
 	//is this overwritten again whenever we transmit?
-	setDataPipeArray(spiHandle, dataPipeArray);
+	setDataPipeArray(spiHandle, 0x01);
 
-	//set the RX buffer size to 8 bytes
+	//set the RX buffer size to x bytes
 	setRXbufferSize(spiHandle, 12);
 
 	//set the TX address of
 	setTXaddress(spiHandle, address);
 
-	//set auto retransmit to 1 time with 250 us
-	writeReg(spiHandle, 0x04, 0x00);
+	//set auto retransmit
+	writeReg(spiHandle, SETUP_RETR, 0x00);
 
 	setLowSpeed(spiHandle);
 
@@ -909,7 +898,7 @@ void roboCallback(SPI_HandleTypeDef* spiHandle){
 		dataStruct.driblerDirection = dataArray[6] & 0x8;
 		dataStruct.driblerSpeed = dataArray[6] & 0x7;
 		//clear RX interrupt
-		writeReg(spiHandle, 0x07, 0x4E);
+		writeReg(spiHandle, STATUS, 0x4E);
 
 		ceHigh(spiHandle);
 

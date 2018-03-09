@@ -121,11 +121,6 @@ int main(void)
 	GPIO_PinState button5;
 	GPIO_PinState button4;
 
-	flushRX(&hspi3);
-	HAL_Delay(10);
-	flushTX(&hspi3);
-	HAL_Delay(10);
-
 	uint8_t remote = 0;
 
   /* USER CODE END 2 */

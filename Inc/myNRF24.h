@@ -52,6 +52,125 @@ enum nrfRegister {
 
 };
 
+//defining bit flags for each register with single-bit fields
+//multi-bit fields are not included -- when you use them, you should
+//definitely look it up in the datasheet
+
+enum CONFIG_FLAG {
+	MASK_RX_DR = 1<<6,
+	MASK_TX_DS = 1<<5,
+	MASK_MAX_RT = 1<<4,
+	EN_CRC = 1<<3,
+	CRC0 = 1<<2,
+	PWR_UP = 1<<1,
+	PRIM_RX = 1<<0
+};
+
+enum EN_AA_FLAG {
+	ENAA_P5 = 1<<5,
+	ENAA_P4 = 1<<4,
+	ENAA_P3 = 1<<3,
+	ENAA_P2 = 1<<2,
+	ENAA_P1 = 1<<1,
+	ENAA_P0 = 1<<0
+};
+
+enum EN_RXADDR_FLAG {
+	ERX_P5 = 1<<5,
+	ERX_P4 = 1<<4,
+	ERX_P3 = 1<<3,
+	ERX_P2 = 1<<2,
+	ERX_P1 = 1<<1,
+	ERX_P0 = 1<<0
+};
+
+//enum SETUP_AW_FLAG {
+	//AW is Bit 1 down to 0
+	//AW 1:0
+//};
+
+//enum SETUP_RETR_FLAG {
+	//ARD is Bit 7 down to 4
+	//ARD 7:4
+	//ARC 3:0
+//};
+
+//enum RF_CH_FLAG {
+	//RF_CH 6:0
+//};
+
+enum RF_SETUP_FLAG {
+	CONT_WAVE = 1<<7,
+	//6 reserved
+	RF_DR_LOW = 1<<5,
+	PLL_LOCK = 1<<4,
+	RF_DR_HIGH = 1<<3,
+	//RF_PWR 2:1
+	//0 Obsolete
+};
+
+enum STATUS_FLAG {
+	RX_DR = 1<<6,
+	TX_DS = 1<<5,
+	MAX_RT = 1<<4,
+	//RX_P_NO 3:1
+	STATUS_TX_FULL = 1<<0,
+};
+
+//enum OBSERVE_TX_FLAG {
+	//PLOS_CNT 7:4
+	//ARC_CNT 3:0
+//};
+
+//enum RPD_FLAG {
+//	RPD = 1<<0,
+//};
+
+
+//skipping a few registers here, since they are multi-bit registers anyway
+//RX_ADDR_P0
+//RX_ADDR_P1
+//RX_ADDR_P2
+//RX_ADDR_P3
+//RX_ADDR_P4
+//RX_ADDR_P5
+//TX_ADDR
+
+
+//enum RX_PW_PX_FLAG {
+	//RX_PW_PX 5:0
+//};
+
+enum FIFO_STATUS_FLAG {
+	TX_REUSE = 1<<6,
+	FIFO_STATUS_TX_FULL = 1<<5,
+	TX_EMPTY = 1<<4,
+	//3:2 reserved
+	RX_FULL = 1<<1,
+	RX_EMPTY = 1<<0,
+};
+
+enum DYNPD_FLAG {
+	DPL_P5 = 1<<5,
+	DPL_P4 = 1<<4,
+	DPL_P3 = 1<<3,
+	DPL_P2 = 1<<2,
+	DPL_P1 = 1<<1,
+	DPL_P0 = 1<<0,
+};
+
+enum FEATURE_FLAG {
+	EN_DPL = 1<<2,
+	EN_ACK_PAY = 1<<1,
+	EN_DYN_ACK = 1<<0,
+};
+
+
+/*
+ *
+ *
+ */
+
 typedef struct dataPacket {
   uint8_t robotID; // 0 to 15
   uint16_t robotVelocity; //between 0 and 4095mm/s
@@ -94,7 +213,7 @@ uint8_t readBit(uint8_t byte, uint8_t position);
 //******************the user is not supposed to use these***********************//
 
 //put the csn pin corresponding to the SPI used high
-static void nssHigh(SPI_HandleTypeDef* spiHandle);
+void nssHigh(SPI_HandleTypeDef* spiHandle);
 
 //put the csn pin corresponding to the SPI used low
 void nssLow(SPI_HandleTypeDef* spiHandle);
@@ -171,7 +290,7 @@ void disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber);
 //choose which datapipes to use
 //note: that pipeNumber[0] should always be 1, because this pipe is used for acks
 //note: RX buffer size should be set
-void setDataPipeArray(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable[6]);
+void setDataPipeArray(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable);
 
 //set the size of the RX buffer in bytes
 void setRXbufferSize(SPI_HandleTypeDef* spiHandle, uint8_t size);
