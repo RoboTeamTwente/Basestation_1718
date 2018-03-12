@@ -226,11 +226,14 @@ void ceLow(SPI_HandleTypeDef* spiHandle);
 
 uint8_t irqRead(SPI_HandleTypeDef* spihandle);
 
+//clear interrupt flags in the STATUS register
+int8_t clearInterrupts(SPI_HandleTypeDef* spiHandle);
+
 //write to a register and output debug info to the terminal
 void writeRegDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data);
 
 //write to a register
-void writeReg(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data);
+int8_t writeReg(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data);
 
 //write to a multi-byte register and output debug info to the terminal
 void writeRegMultiDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* data, uint8_t size);
@@ -250,7 +253,7 @@ void readRegmultiDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataB
 
 //read a multi-byte register
 //output will be stored in the array dataBuffer
-void readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer, uint8_t size);
+int8_t readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer, uint8_t size);
 
 
 
@@ -270,18 +273,18 @@ void softResetRegisters(SPI_HandleTypeDef* spiHandle);
 void NRFinit(SPI_HandleTypeDef* spiHandle);
 
 //set the address you will send to
-void setTXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5]);
+int8_t setTXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5]);
 
 //set own address note: only data pipe 0 is used in this implementation
-void setRXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5], uint8_t pipeNumber);
+int8_t setRXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5], uint8_t pipeNumber);
 
 //set a frequency channel
-void setFreqChannel(SPI_HandleTypeDef* spiHandle, uint8_t channelNumber);
+int8_t setFreqChannel(SPI_HandleTypeDef* spiHandle, uint8_t channelNumber);
 
 //enable a RX data pipe
 //note: pipe 0 is invalid, as it is used for acks
 //note: RX buffer size should be set
-void enableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber);
+int8_t enableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber);
 
 //disable a RX data pipe
 //note: pipe 0 is invalid, as it is used for acks

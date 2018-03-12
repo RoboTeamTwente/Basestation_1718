@@ -171,7 +171,7 @@ int main(void)
 			 * in order to do that -- and why?
 			 */
 			// see page 54 and further for reset values
-			writeReg(&hspi3, 0x07, 0x7E);
+			writeReg(&hspi3, STATUS, 0x7E);
 
 
 			pktNum++;
