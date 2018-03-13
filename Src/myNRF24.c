@@ -118,7 +118,7 @@ int8_t setRXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5], uint8_t pi
 int8_t setTXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5]){
 	if(writeRegMulti(spiHandle, RX_ADDR_P0, address, 5) != 0) // set RX address pipe 0 for auto acks
 		return -1; //error
-	if(writeRegMulti(spiHandle, TX_ADDR, address, 5) !=0 ) // set TX address
+	if(writeRegMulti(spiHandle, TX_ADDR, address, 5) != 0) // set TX address
 		return -1; //error
 
 	return 0; //success
@@ -311,32 +311,28 @@ void flushRX(SPI_HandleTypeDef* spiHandle){
 void sendData(SPI_HandleTypeDef* spiHandle, uint8_t data[], uint8_t length){
 	//TextOut("before sending\n");
 
-	uint8_t rx_data[length];
 	ceLow(spiHandle);
 
 	flushTX(spiHandle);
 
 	nssLow(spiHandle);
-	uint8_t command = NRF_W_TX_PAYLOAD; // W_TX_PAYLOAD
+	uint8_t spi_command = NRF_W_TX_PAYLOAD; // W_TX_PAYLOAD
 	uint8_t spi_timeout = 100;
-	HAL_SPI_Transmit(spiHandle, &command, 1, spi_timeout); //send the write to TX FIFO command
+	HAL_SPI_Transmit(spiHandle, &spi_command, 1, spi_timeout);
 
-	//old method sending unidirectional
-	//for(int i = 0; i < length; i++){
-	//	HAL_SPI_Transmit(spiHandle, data + i, 1, 100); //send the data to NRF
-	//}
-	HAL_SPI_TransmitReceive(spiHandle, data, rx_data, length, spi_timeout); //new method with return data
+
+	HAL_SPI_Transmit(spiHandle, data, length, spi_timeout);
 	nssHigh(spiHandle);
+
 
 	//send over air
 
-	//is it save to set CE (chip enable) high here (disables transmitter module)? Can we be sure that all the data is already transmitted?
 	ceHigh(spiHandle);
-
-
 }
 
 //read a byte from the buffer. only used in RX mode
+//Edit: the datasheet say it is used in RX mode. It doesn't say it is only(!) used in RX mode.
+//     Afaik, you also need to use it in TX mode when you want to read an ACK payload
 void readData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t length){
 	uint8_t receivedData[length];
 
@@ -353,6 +349,29 @@ void readData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t leng
 
 }
 
+
+//read data from the RX FIFO until it's empty or until max_length has been reached
+//this function hasn't been tested yet.
+int8_t readAllData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t max_length){
+	//while there is data in the RX FIFO, read byte per byte
+	uint8_t bytes_read = 0;
+	while((readReg(FIFO_STATUS) & RX_EMPTY) != 0) {
+		nssLow(spiHandle);
+
+		uint8_t command = NRF_R_RX_PAYLOAD; //R_RX_PAYLOAD
+		HAL_SPI_Transmit(spiHandle, &command, 1, 100);
+
+		HAL_SPI_Receive(spiHandle, receiveBuffer++, 1, 100);
+
+		nssHigh(spiHandle);
+		bytes_read++;
+
+		if(bytes_read >= max_length)
+			return -1; //stop here and give an error. Only the amount of bytes specified by max_length will be available.
+	}
+	return 0; //success
+}
+
 void setLowSpeed(SPI_HandleTypeDef* spiHandle){
 	uint8_t reg06 = readReg(spiHandle, 0x06);
 	reg06 = setBit(reg06, 5, 1);
@@ -363,6 +382,31 @@ void setLowSpeed(SPI_HandleTypeDef* spiHandle){
 void enableAutoRetransmitSlow(SPI_HandleTypeDef* spiHandle){
 	//uint8_t reg04 = 0xf3;
 	writeReg(spiHandle, 0x04, 0x11);
+}
+
+//write ACK payload to module
+//this payload will be included in the payload of ACK packets when automatic acknowledgments are activated
+int8_t writeACKpayload(SPI_HandleTypeDef* spiHandle, uint8_t* payloadBytes, uint8_t payload_length) {
+	//This function should be called as often as a packet was received (either before or after reception),
+	//because the module can only hold up to 3 ACK packets.
+	//It will use up one of the packets as a response when it receives a packet.
+	//See: https://shantamraj.wordpress.com/2014/11/30/auto-ack-completely-fixed/ (visited 13th March, 2018)
+
+	//you may want to call writeACKpayload() in the procedure which reads a packet
+	nssLow(spiHandle);
+
+	uint8_t spi_command = NRF_W_ACK_PAYLOAD;
+	//activate spi command
+	if(HAL_SPI_Transmit(spiHandle, &spi_command,1, 100) != HAL_OK)
+		return -1; //HAL/SPI error
+
+	//transmit values for spi command (send payload to nRF module)
+	if(HAL_SPI_Transmit(spiHandle, payloadBytes, payload_length, 100) != HAL_OK)
+		return -1; //HAL/SPI error
+
+	nssHigh(spiHandle);
+
+	return 0; //success
 }
 
 
@@ -475,30 +519,49 @@ uint8_t sendPacketPart1(SPI_HandleTypeDef* spiHandle, uint8_t packet[12]){
 	return addressLong[4];
 }
 
-void waitAck(SPI_HandleTypeDef* spiHandle, uint8_t roboID){
+int8_t waitAck(SPI_HandleTypeDef* spiHandle, uint8_t roboID){
 	if(irqRead(spiHandle)){
-		//check if transmission was succesful
-		//TextOut("in waitAck!\n");
-		uint8_t succesful;
+		//uint8_t succesful = 0;
 		uint8_t status_reg = readReg(spiHandle, STATUS);
 		ceLow(spiHandle);
-		if(status_reg & MASK_MAX_RT){
-			succesful = 0;
+		if(status_reg & MAX_RT){
+			//maximum retransmissions reached without receiving an ACK
 		}
-		else if(status_reg & MASK_TX_DS){
-			succesful = 1;
+		else if(status_reg & TX_DS & RX_DR){
+			//packet (successfully) transmitted
+			//an ACK with payload was received and put in the RX FIFO of the nRF module
+			//succesful = 1;
+
+			//read payload here!
+			uint8_t ack_payload[12]; //I don't really like to set it to a fixed length here. I would rather like to read a global macro (#define PAYLOAD_LENGTH ?)
+			readData(spiHandle, ack_payload, 12);
+
+			clearInterrupts(spiHandle);
+
+			//copy all bytes as hex values to a string
+			for(uint8_t i=0; i<12; i++) {
+				sprintf(smallStrBuffer, "%x", ack_payload[i]);
+			}
+
+			//print string to serial interface (USB)
+			TextOut(smallStrBuffer);
+
+			return 1; //success
 		}
-		else{
-			succesful = 0xFF;
-			TextOut("Error: interupt pin high, but no transmission\n");
+		else if((status_reg & TX_DS) && !(status_reg & RX_DR)){
+			//packet transmitted, but we received no ack payload in return.
+			//either we aren't using auto-acknowledgements or the receiver sent back an empty ack (ack with no payload)
 		}
-		//writeReg(spiHandle, STATUS, 0x3E);
-		clearInterrupts(spiHandle);
-		uint8_t ack[2] = {roboID, succesful};
-		sprintf(smallStrBuffer, "%x%x", ack[0], ack[1]);
-		TextOut(smallStrBuffer);
+		else {
+			//This case would be reached when RX_DR is high (indicating that we received a packet),
+			//but TX_DS is low (indicating that we didn't send anything successfully prior to this reception).
+			//That means: a packet was addressed to us, but we weren't waiting for it.
+			//This packet is not an ACK payload, but a regular packet.
+		}
 
 	}
+
+	return 0; //no ack payload received
 }
 
 dataPacket dataStruct;

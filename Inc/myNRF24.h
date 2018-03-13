@@ -18,6 +18,8 @@
 #include "spi.h"
 #include <inttypes.h>
 
+#include "myNRF24basic.h"
+
 //defining SPI Commands (datasheet, page 48)
 #define NRF_R_REGISTER 0x00 //000AAAAA, AAAAA= Register
 #define NRF_W_REGISTER 0b00100000 //001AAAAA, AAAAA= Register
@@ -120,11 +122,11 @@ enum RF_SETUP_FLAG {
 };
 
 enum STATUS_FLAG {
-	RX_DR = 1<<6,
-	TX_DS = 1<<5,
-	MAX_RT = 1<<4,
-	//RX_P_NO 3:1
-	STATUS_TX_FULL = 1<<0,
+	RX_DR = 1<<6, //packet arrived
+	TX_DS = 1<<5, //packet (successfully) transmitted
+	MAX_RT = 1<<4, //packet did not arrive (no ACK after retransmissions)
+	//RX_P_NO 3:1  //pipe number where a new packet arrived
+	STATUS_TX_FULL = 1<<0, //check if the TX buffer is full
 };
 
 //enum OBSERVE_TX_FLAG {
@@ -287,7 +289,9 @@ void readData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t leng
 
 void setLowSpeed(SPI_HandleTypeDef* spiHandle);
 
-
+//write ACK payload to module
+//this payload will be included in the payload of ACK packets when automatic acknowledgments are activated
+int8_t writeACKpayload(SPI_HandleTypeDef* spiHandle, uint8_t* payloadBytes, uint8_t payload_length);
 
 //---------------------------------debug----------------------------------//
 //print all the registers
@@ -330,7 +334,7 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 //sendpacket is split in 2 parts, so it can be done on 1 microcontroller
 //waiting for send done interrupt would halt the receiving part of the program
 uint8_t sendPacketPart1(SPI_HandleTypeDef* spiHandle, uint8_t packet[8]);
-void waitAck(SPI_HandleTypeDef* spiHandle, uint8_t roboID);
+int8_t waitAck(SPI_HandleTypeDef* spiHandle, uint8_t roboID);
 
 //------------------------TODO RX callback---------------------------//
 //interrupt driven, should be executed when IRQ pin is low
