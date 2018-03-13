@@ -188,6 +188,7 @@ int main(void)
 			}
 
 			sendPacketPart1(&hspi3, madeUpPacket);
+			getAck(&hspi3);
 			HAL_Delay(1000);
 			//fun(); //delay with a LED animation
 			continue; //skip to the next loop iteration
@@ -244,7 +245,7 @@ int main(void)
 			//fun();
 		}
 
-		//waitAck(&hspi3, usbData[0] >> 4); //note: this prints ACK messages with TextOut()
+		getAck(&hspi3);
 
 
   /* USER CODE END WHILE */

@@ -334,7 +334,7 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 //sendpacket is split in 2 parts, so it can be done on 1 microcontroller
 //waiting for send done interrupt would halt the receiving part of the program
 uint8_t sendPacketPart1(SPI_HandleTypeDef* spiHandle, uint8_t packet[8]);
-int8_t waitAck(SPI_HandleTypeDef* spiHandle, uint8_t roboID);
+int8_t getAck(SPI_HandleTypeDef* spiHandle);
 
 //------------------------TODO RX callback---------------------------//
 //interrupt driven, should be executed when IRQ pin is low

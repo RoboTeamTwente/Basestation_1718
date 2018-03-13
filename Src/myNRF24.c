@@ -373,15 +373,15 @@ int8_t readAllData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t
 }
 
 void setLowSpeed(SPI_HandleTypeDef* spiHandle){
-	uint8_t reg06 = readReg(spiHandle, 0x06);
-	reg06 = setBit(reg06, 5, 1);
-	reg06 = setBit(reg06, 3, 0);
-	writeReg(spiHandle, 0x06, reg06);
+	uint8_t reg06 = readReg(spiHandle, RF_SETUP);
+	reg06 |= RF_DR_LOW;
+	reg06 &= ~RF_DR_HIGH;
+	writeReg(spiHandle, RF_SETUP, reg06);
 }
 
 void enableAutoRetransmitSlow(SPI_HandleTypeDef* spiHandle){
-	//uint8_t reg04 = 0xf3;
-	writeReg(spiHandle, 0x04, 0x11);
+	uint8_t arc = 0x11; //auto retransmit count (ARC); how many packets to retransmit before giving up
+	writeReg(spiHandle, SETUP_RETR, arc&7);
 }
 
 //write ACK payload to module
@@ -460,12 +460,13 @@ void initRobo(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 	uint8_t dataPipes = 0b0000011; //the Bits from right to left define which data pipes to activate, starting from pipe 0 on the rightmost bit.
 	setDataPipes(spiHandle, dataPipes);
 
-	//set the RX buffer size to 8 bytes
-	setRXbufferSize(spiHandle, 8);
+	//set the RX buffer size to x bytes
+	setRXbufferSize(spiHandle, 12);
 
 	uint8_t addressLong[5] = {0x12, 0x34, 0x56, 0x78, 0x90 + address};
 	//set the RX address of channel 1
 	setRXaddress(spiHandle, addressLong, 1);
+	writeReg(spiHandle, FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
 
 	setLowSpeed(spiHandle);
 
@@ -478,17 +479,14 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 	//reset and flush buffer
 	NRFinit(spiHandle);
 
-	//enable RX interrupts, disable TX interrupts
+	//enable TX interrupts, disable RX interrupts
 	TXinterrupts(spiHandle);
 
 	//set the frequency channel
 	setFreqChannel(spiHandle, freqChannel);
 
-	//enable pipe 0, diabable all other pipes
-	//uint8_t dataPipeArray[6] = {1, 0, 0, 0, 0, 0};
-
 	//is this overwritten again whenever we transmit?
-	setDataPipes(spiHandle, 0x01);
+	setDataPipes(spiHandle, ERX_P0);
 
 	//set the RX buffer size to x bytes
 	setRXbufferSize(spiHandle, 12);
@@ -498,6 +496,7 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 
 	//set auto retransmit: disabled
 	writeReg(spiHandle, SETUP_RETR, 0x00);
+	writeReg(spiHandle, FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
 
 	setLowSpeed(spiHandle);
 
@@ -519,7 +518,9 @@ uint8_t sendPacketPart1(SPI_HandleTypeDef* spiHandle, uint8_t packet[12]){
 	return addressLong[4];
 }
 
-int8_t waitAck(SPI_HandleTypeDef* spiHandle, uint8_t roboID){
+//called by the basestation to receive ack data
+//if there is data, it will be sent to the computer
+int8_t getAck(SPI_HandleTypeDef* spiHandle){
 	if(irqRead(spiHandle)){
 		//uint8_t succesful = 0;
 		uint8_t status_reg = readReg(spiHandle, STATUS);
@@ -564,6 +565,10 @@ int8_t waitAck(SPI_HandleTypeDef* spiHandle, uint8_t roboID){
 	return 0; //no ack payload received
 }
 
+/*
+ * It looks like the code below will be called as an interrupt service routine whenever the
+ * robot receives a packet.
+ */
 dataPacket dataStruct;
 void roboCallback(SPI_HandleTypeDef* spiHandle){
 		uint8_t dataArray[8];
