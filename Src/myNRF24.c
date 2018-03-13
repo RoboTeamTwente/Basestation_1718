@@ -355,7 +355,7 @@ void readData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t leng
 int8_t readAllData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t max_length){
 	//while there is data in the RX FIFO, read byte per byte
 	uint8_t bytes_read = 0;
-	while((readReg(FIFO_STATUS) & RX_EMPTY) != 0) {
+	while((readReg(spiHandle, FIFO_STATUS) & RX_EMPTY) != 0) {
 		nssLow(spiHandle);
 
 		uint8_t command = NRF_R_RX_PAYLOAD; //R_RX_PAYLOAD
