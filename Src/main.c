@@ -56,7 +56,7 @@
 #include "myNRF24.h"
 #include "TextOut.h"
 #include "packing.h"
-
+#include "discoveryboard.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -115,7 +115,9 @@ int main(void)
 
 
 	fun2();
-	uint8_t address[5] = {0x12, 0x34, 0x56, 0x78, 0x97};
+	//initializing address with a pseudo value ("BAD FOOD").
+	//the address will be overwritten as soon as we have decided to which robot we talk
+	uint8_t address[5] = {0xBA, 0xAA, 0xAD, 0xF0, 0x0D};
 	initBase(&hspi3, 78  , address);
 	GPIO_PinState button6;
 	GPIO_PinState button5;

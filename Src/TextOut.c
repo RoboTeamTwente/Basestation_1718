@@ -31,7 +31,7 @@ void TextOut(char *str){
 	backslashNfixer(str); //fixes encoding and copies to smallStrBuffer...
 	//memcpy(smallStrBuffer, str, strlen(str)); //already copied with backslashNfixer
 	int length = strlen(smallStrBuffer);
-	CDC_Transmit_FS(smallStrBuffer, length);
+	CDC_Transmit_FS((uint8_t*)smallStrBuffer, length);
 	HAL_Delay(1);
 }
 

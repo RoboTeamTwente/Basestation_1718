@@ -17,428 +17,9 @@
  */
 
 #include "myNRF24.h"
+#include "myNRF24basic.h"
+
 #include <string.h>
-
-//*************************auxillery functions**********************************//
-//*******************not actually for NRF24 control*****************************//
-
-//blink leds for debugging purposes
-//blink leds for debugging purposes
-void fun(){
-	  //HAL_GPIO_WritePin(GPIOE, LD3_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_SET);
-	  HAL_Delay(100);
-	  HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_RESET);
-	//  HAL_GPIO_WritePin(GPIOE, LD6_Pin, GPIO_PIN_SET);
-	  HAL_Delay(100);
-	 // HAL_GPIO_WritePin(GPIOE, LD6_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(GPIOE, LD8_Pin, GPIO_PIN_SET);
-	  HAL_Delay(100);
-	  HAL_GPIO_WritePin(GPIOE, LD8_Pin, GPIO_PIN_RESET);
-	 // HAL_GPIO_WritePin(GPIOE, LD10_Pin, GPIO_PIN_SET);
-	  HAL_Delay(100);
-	 // HAL_GPIO_WritePin(GPIOE, LD10_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(GPIOE, LD9_Pin, GPIO_PIN_SET);
-	  HAL_Delay(100);
-	  HAL_GPIO_WritePin(GPIOE, LD9_Pin, GPIO_PIN_RESET);
-	 // HAL_GPIO_WritePin(GPIOE, LD7_Pin, GPIO_PIN_SET);
-	  HAL_Delay(100);
-	 // HAL_GPIO_WritePin(GPIOE, LD7_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(GPIOE, LD5_Pin, GPIO_PIN_SET);
-	  HAL_Delay(100);
-	  HAL_GPIO_WritePin(GPIOE, LD5_Pin, GPIO_PIN_RESET);
-	 // HAL_GPIO_WritePin(GPIOE, LD3_Pin, GPIO_PIN_SET);
-	  HAL_Delay(100);
-}
-
-void fun2(){
-	HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOE, LD8_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOE, LD9_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOE, LD5_Pin, GPIO_PIN_SET);
-}
-
-void fun2out(){
-	HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOE, LD8_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOE, LD9_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOE, LD5_Pin, GPIO_PIN_RESET);
-}
-
-
-//set a specific bit in a byte to a 1 or a 0
-uint8_t setBit(uint8_t byte, uint8_t position, uint8_t bitValue){
-	/*
-	 * A Bit consists of 8 Bits, where the right-most (least significant) Bit
-	 * starts with position 0.
-	 * This function allows to set (1) or clear (0) a speficif Bit of a byte (uint8_t).
-	 *
-	 * A read on "Bitwise Operators in C" is advised.
-	 * We keep this function as a layer of abstraction and it is suggested to
-	 * use this function where it can increase the readability of code.
-	 */
-	if(bitValue)
-		return byte|(1<<position); //set bit
-	else
-		return byte&~(1<<position); //clear bit
-}
-
-//check if a specific bit in a byte is 1
-uint8_t readBit(uint8_t byte, uint8_t position){
-	return byte & (1<<position);
-}
-
-//*****************************low level library********************************//
-//******************the user is not supposed to use these***********************//
-
-//put the nss pin corresponding to the SPI used high
-void nssHigh(SPI_HandleTypeDef* spiHandle){
-	if(spiHandle->Instance == SPI1){
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_SET);
-
-	}
-	else{
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_SET);
-	}
-}
-
-//put the nss pin corresponding to the SPI used low
-void nssLow(SPI_HandleTypeDef* spiHandle){
-	//HAL_Delay(1);
-	if(spiHandle->Instance == SPI1){
-		HAL_GPIO_WritePin(GPIOD, CSN_SPI1_Pin, GPIO_PIN_RESET);
-
-	}
-	else{
-		HAL_GPIO_WritePin(GPIOD, CSN_SPI3_Pin, GPIO_PIN_RESET);
-	}
-}
-
-//put the ce pin corresponding to the SPI used high
-void ceHigh(SPI_HandleTypeDef* spiHandle){
-	if(spiHandle->Instance == SPI1){
-		HAL_GPIO_WritePin(GPIOD, CE_SPI1_Pin, GPIO_PIN_SET);
-
-	}
-	else{
-		HAL_GPIO_WritePin(GPIOD, CE_SPI3_Pin, GPIO_PIN_SET);
-	}
-}
-
-//put the ce pin corresponding to the SPI used low
-void ceLow(SPI_HandleTypeDef* spiHandle){
-	if(spiHandle->Instance == SPI1){
-		HAL_GPIO_WritePin(GPIOD, CE_SPI1_Pin, GPIO_PIN_RESET);
-
-	}
-	else{
-		HAL_GPIO_WritePin(GPIOD, CE_SPI3_Pin, GPIO_PIN_RESET);
-	}
-}
-
-//read the interrupt pin
-uint8_t irqRead(SPI_HandleTypeDef* spiHandle){
-	if(spiHandle->Instance == SPI1)
-		return !HAL_GPIO_ReadPin(GPIOA, IRQ_SPI1_Pin);
-	else
-		return !HAL_GPIO_ReadPin(GPIOD, IRQ_SPI3_Pin);
-}
-
-//returns 0 on success; -1 on error
-int8_t clearInterrupts(SPI_HandleTypeDef* spiHandle) {
-	//0x70 clears the interrupts for: Rx Data Ready, Tx Data Sent and Maximum Retransmits
-	//see datasheet page 56 for details
-	return writeReg(spiHandle, STATUS, 0x70); //forward return code (error code) of writeReg() to caller of clearInterrupts()
-}
-
-//write to a register and output debug info to the terminal
-void writeRegDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data){
-	if(reg == 	RX_ADDR_P0 || reg == RX_ADDR_P1 || reg == TX_ADDR){
-		TextOut("Error, this is a multi-byte register. use writeRegMultiDebug instead\n");
-	}
-	else if(reg > FEATURE || reg == OBSERVE_TX || reg == RPD || (reg > FIFO_STATUS && reg < DYNPD)){
-		TextOut("Error, invalid register. It is either read only or non-existing\n");
-	}
-	else{
-		  //commands can only be given after a falling edge of the nss pin
-		  //see figure 23 of datasheet
-
-		nssLow(spiHandle);
-		uint8_t sendData = setBit(reg, 5, 1); // W_REGISTER = 001A AAAA -> AAAAA = 5 bit register address
-		uint8_t receiveData;
-		uint8_t SPIstatus;
-
-		//comand: write to register reg and get status register
-		SPIstatus = HAL_SPI_TransmitReceive(spiHandle, &sendData, &receiveData, 1, 100);
-
-		sprintf(smallStrBuffer, "writing to reg; spi status = %i", SPIstatus);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "status reg = %x\n", receiveData);
-		TextOut(smallStrBuffer);
-
-		sendData = data;
-		//send data to the register
-		SPIstatus = HAL_SPI_TransmitReceive(spiHandle, &sendData, &receiveData, 1, 100);
-
-		sprintf(smallStrBuffer, "writing to reg; spi status = %i", SPIstatus);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "status reg = %x\n", receiveData);
-		TextOut(smallStrBuffer);
-
-		nssHigh(spiHandle);
-		HAL_Delay(10);
-	}
-}
-
-//write to a register
-//returns 0 on success; -1 on error
-int8_t writeReg(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data){
-	if(reg == 	RX_ADDR_P0 || reg == RX_ADDR_P1 || reg == TX_ADDR){
-		//TextOut("Error, this is a multi-byte register. use writeRegMulti instead\n");
-		return -1; //error
-	}
-	else if(reg > FEATURE || reg == OBSERVE_TX || reg == RPD || (reg > FIFO_STATUS && reg < DYNPD)){
-		//TextOut("Error, invalid register. It is either read only or non-existing\n");
-		return -1; //error
-	}
-
-	//commands can only be given after a falling edge of the nss pin
-	//see figure 23 of datasheet
-	nssLow(spiHandle);
-
-	//the SPI command to write to register X, you take the number of register X
-	//and add 2^5 to it (set the bit on position 5).
-	uint8_t sendData = setBit(reg, 5, 1);
-
-	//comand: write to register reg
-	if(HAL_SPI_Transmit(spiHandle, &sendData, 1, 100) != HAL_OK)
-		return -1; //HAL/SPI error
-
-	sendData = data;
-	//set the value of the register
-	if(HAL_SPI_Transmit(spiHandle, &sendData, 1, 100) != HAL_OK)
-		return -1; //HAL/SPI error
-
-	nssHigh(spiHandle);
-	//HAL_Delay(10);
-	return 0; //return with no error
-}
-
-//write to a multi-byte register and output debug info to the terminal
-void writeRegMultiDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* data, uint8_t size){
-	if(!(reg == 0x0A || reg == 0x0B || reg == 0x10)){
-		TextOut("Error, invalid register. It is either read only, single byte or non-existingd\n");
-	}
-	else if(size > 5){
-		TextOut("Error, size can never be bigger than 5\n");
-	}
-	else{
-		  //commands can only be given after a falling edge of the nss pin
-		  //see figure 23 of datasheet
-		nssLow(spiHandle);
-
-		uint8_t command = setBit(reg, 5, 1); // W_REGISTER = 001A AAAA -> AAAAA = 5 bit register address
-		uint8_t receiveData;
-		uint8_t SPIstatus;
-
-		//comand: write to register reg and get status register
-		SPIstatus = HAL_SPI_TransmitReceive(spiHandle, &command, &receiveData, 1, 100);
-		sprintf(smallStrBuffer, "writing to reg; spi status = %i", SPIstatus);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "status reg = %x\n", receiveData);
-		TextOut(smallStrBuffer);
-
-		//Do not remove the i
-		//it invokes divine intervention
-		//int i = 0;
-
-		//send data to the register
-		SPIstatus = HAL_SPI_TransmitReceive(spiHandle, data, &receiveData, size, 100);
-
-		sprintf(smallStrBuffer, "writing to reg; spi status = %i", SPIstatus);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "status reg = %x\n", receiveData);
-		TextOut(smallStrBuffer);
-
-		nssHigh(spiHandle);
-		HAL_Delay(10);
-	}
-}
-
-/**
-  * @brief  Write to a multi-byte register.
-  * @param  pointer to spi handle
-  * @param  register to write to
-  * @param  Array of bytes with data to write
-  * @param  Size of Data Array
-  * @retval Error Status. No error: 0; on error: -1
-  */
-int8_t writeRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* pdata, uint8_t size){
-	if(!(reg == RX_ADDR_P0 || reg == RX_ADDR_P1 || reg == TX_ADDR)){
-		//TextOut("Error, invalid register. It is either read only, single byte or non-existing.\n");
-		return -1;
-	}
-	else if(size > 5){
-		//TextOut("Error, size can never be bigger than 5\n");
-		return -1;
-	}
-	//commands can only be given after a falling edge of the nss pin
-	//see figure 23 of datasheet
-	nssLow(spiHandle);
-
-	uint8_t cmd_w_register = reg | (1<<5); //the W_REGISTER command is the register number with an appended 1 at position 5.
-	uint8_t receiveData;
-
-	//comand: write to register reg and get status register
-	if(HAL_SPI_TransmitReceive(spiHandle, &cmd_w_register, &receiveData, 1, 100) != HAL_OK)
-		return -1; //SPI error
-
-	//Do not remove the i
-	//it invokes divine intervention
-	//int i = 0;
-	//Sorry, but I'm removing the i. My mom says superstition brings misfortune... ~Ulf S.
-
-	//send data to the register
-	if(HAL_SPI_TransmitReceive(spiHandle, pdata, &receiveData, size, 100) != HAL_OK)
-		return -1; //SPI error
-
-	nssHigh(spiHandle);
-	//HAL_Delay(10);
-	return 0;
-}
-
-//read a register and output debug info to the terminal
-uint8_t readRegDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg){
-	if(reg > 0x1D){
-		TextOut("Error, invalid register\n");
-		return 0xF0;
-	}
-
-	//commands can only be given after a falling edge of the nss pin
-	//see figure 23 of datasheet
-	nssLow(spiHandle);
-
-	//command: read reg 5
-	uint8_t sendData = reg; //R_REGISTER = 000A AAAA -> AAAAA = 5 bit register address
-	uint8_t SPIstatus;
-	uint8_t receiveData;
-	//command: read from register reg and get status register
-	SPIstatus = HAL_SPI_TransmitReceive(spiHandle, &sendData, &receiveData, 1, 100);
-
-	sprintf(smallStrBuffer, "read reg; spi status = %i", SPIstatus);
-	TextOut(smallStrBuffer);
-	sprintf(smallStrBuffer, "status reg = %x\n", receiveData);
-	TextOut(smallStrBuffer);
-
-	//read data from the register
-	SPIstatus = HAL_SPI_Receive(spiHandle, &receiveData, 1, 100);
-
-	sprintf(smallStrBuffer, "reading reg; spi status = %i", SPIstatus);
-	TextOut(smallStrBuffer);
-	sprintf(smallStrBuffer, "status reg = %x\n", receiveData);
-	TextOut(smallStrBuffer);
-
-	nssHigh(spiHandle);
-	HAL_Delay(10);
-
-	return receiveData;
-}
-
-//read a register
-uint8_t readReg(SPI_HandleTypeDef* spiHandle, uint8_t reg){
-	if(reg > 0x1D){
-		//TextOut("Error, invalid register\n");
-		return 0xF0; //error
-	}
-
-	//commands can only be given after a falling edge of the nss pin
-	//see figure 23 of datasheet
-	nssLow(spiHandle);
-
-	uint8_t sendData = reg; //R_REGISTER = 000A AAAA -> AAAAA = 5 bit register address
-	uint8_t receiveData;
-	//command: read from register reg
-	if(HAL_SPI_Transmit(spiHandle, &sendData, 1, 100) != HAL_OK)
-		return 0xF0; //error
-
-	//read data from the register
-	HAL_SPI_Receive(spiHandle, &receiveData, 1, 100);
-
-	nssHigh(spiHandle);
-	//HAL_Delay(10);
-
-	return receiveData;
-}
-
-//read a multi-byte register and output debug info to terminal
-//output will be stored in the array dataBuffer
-void readRegMultiDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer, uint8_t size){
-	if(reg > 0x1D){
-		TextOut("Error, invalid register\n");
-	}
-	else{
-		//commands can only be given after a falling edge of the nss pin
-		//see figure 23 of datasheet
-		nssLow(spiHandle);
-
-		//command: read reg 5
-		uint8_t sendData = reg; //R_REGISTER = 000A AAAA -> AAAAA = 5 bit register address
-		uint8_t SPIstatus;
-		uint8_t receiveData;
-		//command: read from register reg and get status register
-		SPIstatus = HAL_SPI_TransmitReceive(spiHandle, &sendData, &receiveData, 1, 100);
-
-		sprintf(smallStrBuffer, "writing to reg; spi status = %i", SPIstatus);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "status reg = %x\n", receiveData);
-		TextOut(smallStrBuffer);
-
-		//read data from the register
-		SPIstatus = HAL_SPI_Receive(spiHandle, dataBuffer, 5, 100);
-
-		sprintf(smallStrBuffer, "reading reg; spi status = %i\n", SPIstatus);
-		TextOut(smallStrBuffer);
-		for(int i = 0; i < 5; i++){
-			sprintf(smallStrBuffer, "reg = %x\n", dataBuffer[i]);
-			TextOut(smallStrBuffer);
-		}
-		TextOut("\n");
-
-		nssHigh(spiHandle);
-		HAL_Delay(10);
-
-	}
-}
-
-//read a multi-byte register
-//output will be stored in the array dataBuffer
-//returns 0 on success; -1 on error
-int8_t readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer, uint8_t size){
-	if(reg > 0x1D){
-		TextOut("Error, invalid register\n");
-		return -1; //error
-	}
-	//commands can only be given after a falling edge of the nss pin
-	//see figure 23 of datasheet
-	nssLow(spiHandle);
-
-	//command: read reg 5
-	uint8_t sendData = reg; //R_REGISTER = 000A AAAA -> AAAAA = 5 bit register address
-	//command: read from register reg and get status register
-	if(HAL_SPI_Transmit(spiHandle, &sendData,1, 100) != HAL_OK)
-		return -1; //HAL/SPI error
-
-	//read data from the register
-	if(HAL_SPI_Receive(spiHandle, dataBuffer, 5, 100) != HAL_OK)
-		return -1; //HAL/SPI error
-
-	nssHigh(spiHandle);
-
-	HAL_Delay(10);
-
-	return 0; //no error
-}
-
 
 
 //****************************high level library**************************//
@@ -568,49 +149,55 @@ int8_t enableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
 
 //disable a RX data pipe
 //note: pipe 0 is invalid, as it is used for acks
-void disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
+int8_t disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
 	if(pipeNumber == 0){
-		TextOut("Error, pipe 0 reserved for acks\n");
+		//TextOut("Error, pipe 0 reserved for acks\n");
+		return -1; //error: invalid pipeNumber
 	}
 	else if(pipeNumber > 5){
-		TextOut("Error, max pipe number = 5 \n");
+		//TextOut("Error, max pipe number = 5 \n");
+		return -1; //error: invalid pipeNumber
 	}
-	else{
-		uint8_t reg02 = readReg(spiHandle, 0x02);
-		reg02 = setBit(reg02, pipeNumber, 0);
-		writeReg(spiHandle, EN_RXADDR, reg02);// disable pipe
-		writeReg(spiHandle, RX_PW_P0 + pipeNumber, 0); //set buffer size to 0;
-	}
+	uint8_t reg02 = readReg(spiHandle, EN_RXADDR);
+	reg02 = setBit(reg02, pipeNumber, 0);
+	writeReg(spiHandle, EN_RXADDR, reg02);// disable pipe
+	writeReg(spiHandle, RX_PW_P0 + pipeNumber, 0); //set buffer size to 0;
+	return 0;
 }
 
 //choose which datapipes to use
 //Check out page 54 (Register Map) in the datasheet.
-void setDataPipeArray(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable){
+//Set the Bits according to the datapipes in pipeEnable.
+void setDataPipes(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable){
 	writeReg(spiHandle, EN_RXADDR, pipeEnable);
 }
 
 //set the size of the RX buffer in bytes
-void setRXbufferSize(SPI_HandleTypeDef* spiHandle, uint8_t size){
+int8_t setRXbufferSize(SPI_HandleTypeDef* spiHandle, uint8_t size){
 	if(size > 32){
-		TextOut("Error: size can not be bigger than 32 bytes\n");
+		//TextOut("Error: size can not be bigger than 32 bytes\n");
+		return -1; //error: size too big
 	}
-	else{
-		uint8_t reg02 = readReg(spiHandle, 0x02);
-		for(int i = 0; i < 6; i++){
-			if(readBit(reg02, i)){
-				writeReg(spiHandle, RX_PW_P0 + i, size);
-			}
-			else{
-				writeReg(spiHandle, RX_PW_P0 + i, 0);
-			}
+
+	uint8_t rx_addr_reg = readReg(spiHandle, EN_RXADDR);
+
+	//for every activated data pipe in EN_RXADDR, set the buffer size in RX_PW_PX to "size" amount of bytes.
+	for(uint8_t i = 0; i < 6; i++){
+		if(readBit(rx_addr_reg, i)){
+			writeReg(spiHandle, RX_PW_P0 + i, size);
+		}
+		else{
+			writeReg(spiHandle, RX_PW_P0 + i, 0);
 		}
 	}
+
+	return 0; //success
 }
 
 //make sure interrupts for the TX functions are enabled
 //and those for the RX functions not
 void TXinterrupts(SPI_HandleTypeDef* spiHandle){
-	uint8_t config_reg = readReg(spiHandle, 0x00);
+	uint8_t config_reg = readReg(spiHandle, CONFIG);
 	/* Register 0x00 (CONFIG)
 	 * Bit 6: MASK_RX_DR
 	 * Bit 5: MASK_TX_DS
@@ -651,8 +238,8 @@ void powerDown(SPI_HandleTypeDef* spiHandle){
 	ceLow(spiHandle); //go to standby mode
 	uint8_t reg_config = readReg(spiHandle, CONFIG);
 
-	//set power bit: bit 1 of reg 0
-	reg_config = setBit(reg_config, 1, 0);
+	//clear power bit: bit 2 to 0
+	reg_config = setBit(reg_config, 2, 0);
 
 	writeReg(spiHandle, CONFIG, reg_config);
 }
@@ -702,7 +289,7 @@ void powerUpRX(SPI_HandleTypeDef* spiHandle){
 //flush the TX buffer
 void flushTX(SPI_HandleTypeDef* spiHandle){
 	nssLow(spiHandle);
-	uint8_t sendData = 0xE1; //FLUSH_TX
+	uint8_t sendData = NRF_FLUSH_TX; //FLUSH_TX
 	HAL_SPI_Transmit(spiHandle, &sendData, 1, 100);
 	nssHigh(spiHandle);
 
@@ -711,7 +298,7 @@ void flushTX(SPI_HandleTypeDef* spiHandle){
 //flush the RX buffer
 void flushRX(SPI_HandleTypeDef* spiHandle){
 	nssLow(spiHandle);
-	uint8_t sendData = 0xE2; //FLUSH_RX
+	uint8_t sendData = NRF_FLUSH_RX; //FLUSH_RX
 	HAL_SPI_Transmit(spiHandle, &sendData, 1, 100);
 	nssHigh(spiHandle);
 }
@@ -724,20 +311,21 @@ void flushRX(SPI_HandleTypeDef* spiHandle){
 void sendData(SPI_HandleTypeDef* spiHandle, uint8_t data[], uint8_t length){
 	//TextOut("before sending\n");
 
-	uint8_t troep[length];
+	uint8_t rx_data[length];
 	ceLow(spiHandle);
 
 	flushTX(spiHandle);
 
 	nssLow(spiHandle);
-	uint8_t command = 0xA0; // W_TX_PAYLOAD
-	HAL_SPI_Transmit(spiHandle, &command, 1, 100); //send the write to TX FIFO command
+	uint8_t command = NRF_W_TX_PAYLOAD; // W_TX_PAYLOAD
+	uint8_t spi_timeout = 100;
+	HAL_SPI_Transmit(spiHandle, &command, 1, spi_timeout); //send the write to TX FIFO command
 
 	//old method sending unidirectional
 	//for(int i = 0; i < length; i++){
 	//	HAL_SPI_Transmit(spiHandle, data + i, 1, 100); //send the data to NRF
 	//}
-	HAL_SPI_TransmitReceive(spiHandle, data, troep, length, 100); //new method with return data
+	HAL_SPI_TransmitReceive(spiHandle, data, rx_data, length, spi_timeout); //new method with return data
 	nssHigh(spiHandle);
 
 	//send over air
@@ -754,7 +342,7 @@ void readData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t leng
 
 	nssLow(spiHandle);
 
-	uint8_t command = 0x61; //R_RX_PAYLOAD
+	uint8_t command = NRF_R_RX_PAYLOAD; //R_RX_PAYLOAD
 	HAL_SPI_Transmit(spiHandle, &command, 1, 100);
 
 	HAL_SPI_Receive(spiHandle, receivedData, length, 100);
@@ -800,14 +388,13 @@ void printAllRegisters(SPI_HandleTypeDef* spiHandle){
 	}
 
 	for(int i = 0x11; i <= 0x17; i++){
-
-		readReg(spiHandle, i);
+		reg = readReg(spiHandle, i);
 		sprintf(smallStrBuffer, "reg %x = %x\n", i, reg);
 		TextOut(smallStrBuffer);
 	}
 
 	for(int i = 0x1C; i <= 0x1D; i++){
-		readReg(spiHandle, i);
+		reg = readReg(spiHandle, i);
 		sprintf(smallStrBuffer, "reg %x = %x\n", i, reg);
 		TextOut(smallStrBuffer);
 	}
@@ -827,7 +414,7 @@ void initRobo(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 
 	//enable pipe 0 and 1, diabable all other pipes
 	uint8_t dataPipes = 0b0000011; //the Bits from right to left define which data pipes to activate, starting from pipe 0 on the rightmost bit.
-	setDataPipeArray(spiHandle, dataPipes);
+	setDataPipes(spiHandle, dataPipes);
 
 	//set the RX buffer size to 8 bytes
 	setRXbufferSize(spiHandle, 8);
@@ -857,7 +444,7 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 	//uint8_t dataPipeArray[6] = {1, 0, 0, 0, 0, 0};
 
 	//is this overwritten again whenever we transmit?
-	setDataPipeArray(spiHandle, 0x01);
+	setDataPipes(spiHandle, 0x01);
 
 	//set the RX buffer size to x bytes
 	setRXbufferSize(spiHandle, 12);
@@ -865,7 +452,7 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 	//set the TX address of
 	setTXaddress(spiHandle, address);
 
-	//set auto retransmit
+	//set auto retransmit: disabled
 	writeReg(spiHandle, SETUP_RETR, 0x00);
 
 	setLowSpeed(spiHandle);
@@ -890,28 +477,26 @@ uint8_t sendPacketPart1(SPI_HandleTypeDef* spiHandle, uint8_t packet[12]){
 
 void waitAck(SPI_HandleTypeDef* spiHandle, uint8_t roboID){
 	if(irqRead(spiHandle)){
-		//check if transmistion was succesful
+		//check if transmission was succesful
 		//TextOut("in waitAck!\n");
 		uint8_t succesful;
-		uint8_t reg07 = readReg(spiHandle, 0x07);
+		uint8_t status_reg = readReg(spiHandle, STATUS);
 		ceLow(spiHandle);
-		if(readBit(reg07, 4)){
+		if(status_reg & MASK_MAX_RT){
 			succesful = 0;
 		}
-		else if(readBit(reg07, 5)){
+		else if(status_reg & MASK_TX_DS){
 			succesful = 1;
 		}
 		else{
 			succesful = 0xFF;
 			TextOut("Error: interupt pin high, but no transmission\n");
 		}
-		writeReg(spiHandle, 0x07, 0x3E);
+		//writeReg(spiHandle, STATUS, 0x3E);
+		clearInterrupts(spiHandle);
 		uint8_t ack[2] = {roboID, succesful};
 		sprintf(smallStrBuffer, "%x%x", ack[0], ack[1]);
 		TextOut(smallStrBuffer);
-		//HexOut(ack, 2);
-		//sprintf(smallStrBuffer, "id: %i; succesfull: %i\n", roboID, succesful);
-		//TextOut(smallStrBuffer);
 
 	}
 }
@@ -935,7 +520,7 @@ void roboCallback(SPI_HandleTypeDef* spiHandle){
 		dataStruct.driblerDirection = dataArray[6] & 0x8;
 		dataStruct.driblerSpeed = dataArray[6] & 0x7;
 		//clear RX interrupt
-		writeReg(spiHandle, STATUS, 0x4E);
+		writeReg(spiHandle, STATUS, RX_DR);
 
 		ceHigh(spiHandle);
 

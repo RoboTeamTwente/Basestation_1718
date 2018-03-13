@@ -16,36 +16,48 @@
 #include "gpio.h"
 #include "stm32f3xx_hal.h"
 #include "spi.h"
+#include <inttypes.h>
+
+//defining SPI Commands (datasheet, page 48)
+#define NRF_R_REGISTER 0x00 //000AAAAA, AAAAA= Register
+#define NRF_W_REGISTER 0b00100000 //001AAAAA, AAAAA= Register
+#define NRF_R_RX_PAYLOAD 0b01100001
+#define NRF_W_TX_PAYLOAD 0b10100000
+#define NRF_FLUSH_TX 0b11100001
+#define NRF_FLUSH_RX 0b11100010
+#define NRF_REUSE_TX_PL 0b11100011
+#define NRF_R_RX_PL_WID 0b01100000
+#define NRF_W_ACK_PAYLOAD 0b10101000 //10101PPP, PPP: pipenumber
+#define NRF_W_TX_PAYLOAD_NO_ACK 0b10110000
+#define NRF_NOP 0xff
+
 
 //defining registers
 //see datasheet page 54 and following
 enum nrfRegister {
-	//feel free to complete
-	//the values in the comments.
-	//they are just increments unless they are overwritten (DYNPD)
 	CONFIG, //0x00
 	EN_AA, //0x01
-	EN_RXADDR,
-	SETUP_AW,
-	SETUP_RETR,
+	EN_RXADDR, //0x02
+	SETUP_AW, //0x03
+	SETUP_RETR, //0x04
 	RF_CH, //0x05
-	RF_SETUP,
-	STATUS,
-	OBSERVE_TX,
-	RPD,
+	RF_SETUP, //0x06
+	STATUS, //0x07
+	OBSERVE_TX, //0x08
+	RPD, //0x09
 	RX_ADDR_P0, //0x0A
-	RX_ADDR_P1,
-	RX_ADDR_P2,
-	RX_ADDR_P3,
-	RX_ADDR_P4,
+	RX_ADDR_P1, //0x0B
+	RX_ADDR_P2, //0x0C
+	RX_ADDR_P3, //0x0D
+	RX_ADDR_P4, //0x0E
 	RX_ADDR_P5, //0x0F
 	TX_ADDR, //0x10
-	RX_PW_P0,
-	RX_PW_P1,
-	RX_PW_P2,
-	RX_PW_P3,
-	RX_PW_P4,
-	RX_PW_P5,
+	RX_PW_P0, //0x11
+	RX_PW_P1, //0x12
+	RX_PW_P2, //0x13
+	RX_PW_P3, //0x14
+	RX_PW_P4, //0x15
+	RX_PW_P5, //0x16
 	FIFO_STATUS, //0x17
 	DYNPD=0x1C, //0x1C
 	FEATURE //0x1D
@@ -85,13 +97,11 @@ enum EN_RXADDR_FLAG {
 };
 
 //enum SETUP_AW_FLAG {
-	//AW is Bit 1 down to 0
-	//AW 1:0
+	//AW 1:0 (AW is Bit 1 down to 0)
 //};
 
 //enum SETUP_RETR_FLAG {
-	//ARD is Bit 7 down to 4
-	//ARD 7:4
+	//ARD 7:4 (ARD is Bit 7 down to 4)
 	//ARC 3:0
 //};
 
@@ -193,70 +203,6 @@ struct ackPacket {
 extern dataPacket dataStruct;
 
 
-//*************************auxillery functions**********************************//
-//*******************not actually for NRF24 control*****************************//
-
-//blink leds for debugging purposes
-void fun();
-
-void fun2();
-void fun2out();
-
-//set a specific bit in a byte to a 1 or a 0
-uint8_t setBit(uint8_t byte, uint8_t position, uint8_t value);
-
-//check if a specific bit in a byte is 1
-uint8_t readBit(uint8_t byte, uint8_t position);
-
-
-//*****************************low level library********************************//
-//******************the user is not supposed to use these***********************//
-
-//put the csn pin corresponding to the SPI used high
-void nssHigh(SPI_HandleTypeDef* spiHandle);
-
-//put the csn pin corresponding to the SPI used low
-void nssLow(SPI_HandleTypeDef* spiHandle);
-
-//put the ce pin corresponding to the SPI used high
-void ceHigh(SPI_HandleTypeDef* spiHandle);
-
-//put the ce pin corresponding to the SPI used low
-void ceLow(SPI_HandleTypeDef* spiHandle);
-
-uint8_t irqRead(SPI_HandleTypeDef* spihandle);
-
-//clear interrupt flags in the STATUS register
-int8_t clearInterrupts(SPI_HandleTypeDef* spiHandle);
-
-//write to a register and output debug info to the terminal
-void writeRegDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data);
-
-//write to a register
-int8_t writeReg(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data);
-
-//write to a multi-byte register and output debug info to the terminal
-void writeRegMultiDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* data, uint8_t size);
-
-//write to a multi-byte register
-int8_t writeRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* data, uint8_t size);
-
-//read a register and output debug info to the terminal
-uint8_t readRegDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg);
-
-//read a register
-uint8_t readReg(SPI_HandleTypeDef* spiHandle, uint8_t reg);
-
-//read a multi-byte register and output debug info to terminal
-//output will be stored in the array dataBuffer
-void readRegmultiDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer, uint8_t size);
-
-//read a multi-byte register
-//output will be stored in the array dataBuffer
-int8_t readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer, uint8_t size);
-
-
-
 
 //****************************high level library**************************//
 //********************the user may use these functions********************//
@@ -288,15 +234,15 @@ int8_t enableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber);
 
 //disable a RX data pipe
 //note: pipe 0 is invalid, as it is used for acks
-void disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber);
+int8_t disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber);
 
 //choose which datapipes to use
 //note: that pipeNumber[0] should always be 1, because this pipe is used for acks
 //note: RX buffer size should be set
-void setDataPipeArray(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable);
+void setDataPipes(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable);
 
 //set the size of the RX buffer in bytes
-void setRXbufferSize(SPI_HandleTypeDef* spiHandle, uint8_t size);
+int8_t setRXbufferSize(SPI_HandleTypeDef* spiHandle, uint8_t size);
 
 //make sure interrupts for the TX functions are enabled
 //and those for the RX functions not
