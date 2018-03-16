@@ -15,18 +15,6 @@
 //******************the user is not supposed to use these***********************//
 
 
-//read the interrupt pin
-/*
- *
- * implementation on the side of the basestation, I believe
-uint8_t irqRead(SPI_HandleTypeDef* spiHandle){
-	if(spiHandle->Instance == SPI1)
-		return !HAL_GPIO_ReadPin(GPIOA, IRQ_SPI1_Pin);
-	else
-		return !HAL_GPIO_ReadPin(GPIOD, IRQ_SPI3_Pin);
-}
-*/
-
 //returns 0 on success; -1 on error
 int8_t clearInterrupts(SPI_HandleTypeDef* spiHandle) {
 	//0x70 clears the interrupts for: Rx Data Ready, Tx Data Sent and Maximum Retransmits
