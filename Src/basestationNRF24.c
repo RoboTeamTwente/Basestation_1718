@@ -34,6 +34,8 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 
 	//set auto retransmit: disabled
 	writeReg(spiHandle, SETUP_RETR, 0x00);
+
+	//enable dynamic packet length, ack payload, dynamic acks
 	writeReg(spiHandle, FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
 
 	setLowSpeed(spiHandle);
