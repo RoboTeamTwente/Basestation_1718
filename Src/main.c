@@ -115,7 +115,7 @@ int main(void)
 
 
 	fun2();
-	TextOut("Initializing Basestation.\n");
+	//TextOut("Initializing Basestation.\n");
 	//initializing address with a pseudo value ("BAD FOOD").
 	//the address will be overwritten as soon as we have decided to which robot we talk
 	uint8_t address[5] = {0xBA, 0xAA, 0xAD, 0xF0, 0x0D};
@@ -148,7 +148,7 @@ int main(void)
 	uint8_t debug_transmit_repeatedly = 1;
 
 	uint8_t pktNum = 0;
-	uint8_t toggleMe = 1;
+	//uint8_t toggleMe = 1;
 
 	while (1)
 	{
@@ -160,7 +160,6 @@ int main(void)
 		blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin); //button state of the blue user button of the Discovery board
 
 		if(debug_transmit_repeatedly == 1) {
-
 
 			/*
 			 * Apparently we need to write to the STATUS register
@@ -175,6 +174,7 @@ int main(void)
 			clearInterrupts(&hspi3);
 
 
+			/*
 			pktNum++;
 
 			if(toggleMe){
@@ -186,11 +186,25 @@ int main(void)
 				createRobotPacket(id+1, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
 				toggleMe = 1;
 			}
-
+			*/
+			createRobotPacket(id, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
+			TextOut("Sending packet..\n");
 			sendPacketPart1(&hspi3, madeUpPacket);
-			getAck(&hspi3);
-			HAL_Delay(1000);
-			//fun(); //delay with a LED animation
+			if(getAck(&hspi3) == 1) {
+				TextOut("Got ACK! :)\n");
+			}
+			else {
+				TextOut("No ACK... :(\n");
+				uint8_t status_reg = readReg(&hspi3, STATUS);
+				uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
+				uint8_t tx_ds_flag = ((status_reg & TX_DS) > 0);
+				uint8_t max_rt_flag = ((status_reg & MAX_RT) > 0);
+				sprintf(smallStrBuffer, "RX_DR: %i, TX_DS: %i, MAX_RT: %i\n", rx_dr_flag, tx_ds_flag, max_rt_flag);
+				TextOut(smallStrBuffer);
+			}
+			TextOut("\n");
+			HAL_Delay(500);
+			fun(); //delay with a LED animation
 			continue; //skip to the next loop iteration
 		}
 		if(blue){

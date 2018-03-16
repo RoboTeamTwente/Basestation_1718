@@ -2,7 +2,8 @@
 ' * myNRF24.c
  *
  *  Created on: 19 sep. 2016
- *      Author: Hans-van-der-Heide
+ *      Author: Hans van-der-Heide
+ *      Author: Ulf Stottmeister, March 2018
  */
 
 
@@ -158,9 +159,9 @@ int8_t disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
 		//TextOut("Error, max pipe number = 5 \n");
 		return -1; //error: invalid pipeNumber
 	}
-	uint8_t reg02 = readReg(spiHandle, EN_RXADDR);
-	reg02 = setBit(reg02, pipeNumber, 0);
-	writeReg(spiHandle, EN_RXADDR, reg02);// disable pipe
+	uint8_t pipeEnableReg = readReg(spiHandle, EN_RXADDR);
+	pipeEnableReg = setBit(pipeEnableReg, pipeNumber, 0);
+	writeReg(spiHandle, EN_RXADDR, pipeEnableReg);// disable pipe
 	writeReg(spiHandle, RX_PW_P0 + pipeNumber, 0); //set buffer size to 0;
 	return 0;
 }
@@ -208,7 +209,7 @@ void TXinterrupts(SPI_HandleTypeDef* spiHandle){
 	 * 0 means: enabled; Interrupt on IRQ Pin as active low
 	 *
 	 */
-	config_reg = setBit(config_reg, 6, 1); //diable for RX_DR
+	config_reg = setBit(config_reg, 6, 1); //disable for RX_DR
 	config_reg = setBit(config_reg, 5, 0); //enable for TX_DS
 	config_reg = setBit(config_reg, 4, 0); //enable for MAX_RT
 
@@ -373,10 +374,10 @@ int8_t readAllData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t
 }
 
 void setLowSpeed(SPI_HandleTypeDef* spiHandle){
-	uint8_t reg06 = readReg(spiHandle, RF_SETUP);
-	reg06 |= RF_DR_LOW;
-	reg06 &= ~RF_DR_HIGH;
-	writeReg(spiHandle, RF_SETUP, reg06);
+	uint8_t rfsetup_reg = readReg(spiHandle, RF_SETUP);
+	rfsetup_reg |= RF_DR_LOW;
+	rfsetup_reg &= ~RF_DR_HIGH;
+	writeReg(spiHandle, RF_SETUP, rfsetup_reg);
 }
 
 void enableAutoRetransmitSlow(SPI_HandleTypeDef* spiHandle){
@@ -521,12 +522,34 @@ uint8_t sendPacketPart1(SPI_HandleTypeDef* spiHandle, uint8_t packet[12]){
 //called by the basestation to receive ack data
 //if there is data, it will be sent to the computer
 int8_t getAck(SPI_HandleTypeDef* spiHandle){
+	/*
+	 * The following paragraph assumes that ACKs are enabled (e.g. we expect packets to be answered with ACKs).
+	 *
+	 * When we send a packet we would need to wait for TX_DS to be set (indicating that an ACK packet was received)
+	 * and RX_DR to be set (indicating that the ACK has a payload).
+	 * TX_DS and RX_DR are flags which would cause an interrupt on the IRQ pin,
+	 * when the CONFIG register is set up accordingly.
+	 *
+	 * With TXinterrupts(), the TX_DS flag and the MAX_RT flag is set, causing an interrupt
+	 * when a packet is sent and answered with an ACK.
+	 * The flag RX_DR is not set in this function, since we expect that TX_DS (successful transmission)
+	 * will be set before we receive an ACK.
+	 * Eventhough an ACK payload will not trigger an interrupt by itself, we should be able to
+	 * check the existence of an ACK payload by reading the RX_DR flag.
+	 *
+	 */
 	if(irqRead(spiHandle)){
 		//uint8_t succesful = 0;
 		uint8_t status_reg = readReg(spiHandle, STATUS);
 		ceLow(spiHandle);
 		if(status_reg & MAX_RT){
 			//maximum retransmissions reached without receiving an ACK
+			//we don't care about dropped packets, we could as well just not make this event cause an interrupt,
+			//but we might want to decide to retransmit packets in a later implementation.
+			//For now I will just reset the flag for this interrupt and go on
+			writeReg(spiHandle, STATUS, readReg(spiHandle, STATUS) & MAX_RT);
+			flushTX(spiHandle);
+			return -1;
 		}
 		else if(status_reg & TX_DS & RX_DR){
 			//packet (successfully) transmitted
@@ -534,7 +557,9 @@ int8_t getAck(SPI_HandleTypeDef* spiHandle){
 			//succesful = 1;
 
 			//read payload here!
-			uint8_t ack_payload[12]; //I don't really like to set it to a fixed length here. I would rather like to read a global macro (#define PAYLOAD_LENGTH ?)
+
+			 //TODO: I don't really like to set it to a fixed length here. I would rather like to read a global macro (#define PAYLOAD_LENGTH ?)
+			uint8_t ack_payload[12];
 			readData(spiHandle, ack_payload, 12);
 
 			clearInterrupts(spiHandle);
@@ -552,16 +577,21 @@ int8_t getAck(SPI_HandleTypeDef* spiHandle){
 		else if((status_reg & TX_DS) && !(status_reg & RX_DR)){
 			//packet transmitted, but we received no ack payload in return.
 			//either we aren't using auto-acknowledgements or the receiver sent back an empty ack (ack with no payload)
+			return -1;
 		}
 		else {
 			//This case would be reached when RX_DR is high (indicating that we received a packet),
 			//but TX_DS is low (indicating that we didn't send anything successfully prior to this reception).
 			//That means: a packet was addressed to us, but we weren't waiting for it.
 			//This packet is not an ACK payload, but a regular packet.
+			return -1;
 		}
 
+	} else {
+		//there was no interrupt yet
+		return -2;
 	}
-
+	//TextOut("00"); //could be sent as an error. needs to be agreed on with the software communicating with the basestation
 	return 0; //no ack payload received
 }
 

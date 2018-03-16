@@ -33,6 +33,11 @@ void TextOut(char *str){
 	int length = strlen(smallStrBuffer);
 	CDC_Transmit_FS((uint8_t*)smallStrBuffer, length);
 	HAL_Delay(1);
+	//clear buffer
+	for(uint16_t i = 0; i <= 1023; i++) {
+		smallStrBuffer[i] = '\0';
+	}
+
 }
 
 void HexOut(uint8_t data[], uint8_t length){
