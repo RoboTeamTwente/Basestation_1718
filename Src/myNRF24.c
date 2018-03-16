@@ -28,6 +28,36 @@
 
 //--------------------initialization and configuration--------------------//
 
+//initialize the system:
+//reset it and enable pipe 1 and 0
+//set pipeWith to 1
+//flush TX and RX buffer
+void NRFinit(SPI_HandleTypeDef* spiHandle){
+	//reset system
+
+	/*
+	 * I don't see a need for resetting all register values to their default values
+	 * when the system has just booted up. The datasheet already promises those values during boot-up.
+	 * A call to the softResetRegisters() function is only needed when we want to simulate a reboot of the nRF module
+	 * without actually turning it on and off.
+	 */
+	//softResetRegisters(spiHandle);
+	clearInterrupts(spiHandle);
+
+	//enable RX pipe 0 and 1, disable all other pipes
+	writeReg(spiHandle, EN_RXADDR, ERX_P0|ERX_P1);
+
+	//set RX pipe with of pipe 0 to 1 byte.
+	writeReg(spiHandle, RX_PW_P0, 0x01);
+
+	//set RX pipe with of pipe 1 to 1 byte.
+	writeReg(spiHandle, RX_PW_P1, 0x01);
+
+	flushRX(spiHandle);
+	flushTX(spiHandle);
+
+}
+
 //reset all register values to reset values on page 54, datasheet
 void softResetRegisters(SPI_HandleTypeDef* spiHandle){
 	uint8_t multRegData[5] = {0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
@@ -65,54 +95,7 @@ void softResetRegisters(SPI_HandleTypeDef* spiHandle){
 
 }
 
-//initialize the system:
-//reset it and enable pipe 1 and 0
-//set pipeWith to 1
-//flush TX and RX buffer
-void NRFinit(SPI_HandleTypeDef* spiHandle){
-	//reset system
 
-	/*
-	 * I don't see a need for resetting all register values to their default values
-	 * when the system has just booted up. The datasheet already promises those values during boot-up.
-	 * A call to the softResetRegisters() function is only needed when we want to simulate a reboot of the nRF module
-	 * without actually turning it on and off.
-	 */
-	//softResetRegisters(spiHandle);
-	clearInterrupts(spiHandle);
-
-	//enable RX pipe 0 and 1, disable all other pipes
-	writeReg(spiHandle, EN_RXADDR, ERX_P0|ERX_P1);
-
-	//set RX pipe with of pipe 0 to 1 byte.
-	writeReg(spiHandle, RX_PW_P0, 0x01);
-
-	//set RX pipe with of pipe 1 to 1 byte.
-	writeReg(spiHandle, RX_PW_P1, 0x01);
-
-	flushRX(spiHandle);
-	flushTX(spiHandle);
-
-}
-
-
-//set the address you will send to
-//pipe 0 is reserved for acks: it's adress always equals the TX address and is set with setTXaddress
-//returns 0 on success; -1 on error
-int8_t setRXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5], uint8_t pipeNumber){
-	if(pipeNumber == 0){
-		//TextOut("Error: pipe 0 is reserved for acks\n");
-		return -1; //error
-	}
-	else if(pipeNumber > 5){
-		TextOut("Error: max pipe number = 5\n");
-		return -1; //error
-	}
-
-	writeRegMulti(spiHandle, RX_ADDR_P0 + pipeNumber, address, 5);
-
-	return 0;
-}
 
 //set own address note: only data pipe 0 is used in this implementation
 //returns 0 on success; -1 on error
@@ -124,6 +107,17 @@ int8_t setTXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5]){
 
 	return 0; //success
 }
+
+//set the address you will send to
+//pipe 0 is reserved for acks: its address always equals the TX address and is set with setTXaddress
+//returns 0 on success; -1 on error
+int8_t setRXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5], uint8_t pipeNumber){
+	if(pipeNumber == 0 || pipeNumber > 5)
+		return -1; //error. invalid pipeNumber
+
+	return writeRegMulti(spiHandle, RX_ADDR_P0 + pipeNumber, address, 5);
+}
+
 
 //returns 0 on success; -1 on error
 int8_t setFreqChannel(SPI_HandleTypeDef* spiHandle, uint8_t channelNumber){
@@ -411,117 +405,11 @@ int8_t writeACKpayload(SPI_HandleTypeDef* spiHandle, uint8_t* payloadBytes, uint
 }
 
 
-//---------------------------------debug----------------------------------//
-
-void printAllRegisters(SPI_HandleTypeDef* spiHandle){
-	uint8_t regMulti[5];
-	uint8_t reg;
-	for(int i = 0x00; i <= 0x09; i++){
-		reg = readReg(spiHandle, i);
-		sprintf(smallStrBuffer, "reg %x = %x\n", i, reg);
-		TextOut(smallStrBuffer);
-
-	}
-
-	for(int i = 0x0A; i <= 0x10; i++){
-		readRegMulti(spiHandle, i, regMulti, 5);
-		for(int j = 0; j < 5; j++){
-			sprintf(smallStrBuffer, "reg %x; field %x = %x\n", i, j, regMulti[j]);
-			TextOut(smallStrBuffer);
-
-		}
-	}
-
-	for(int i = 0x11; i <= 0x17; i++){
-		reg = readReg(spiHandle, i);
-		sprintf(smallStrBuffer, "reg %x = %x\n", i, reg);
-		TextOut(smallStrBuffer);
-	}
-
-	for(int i = 0x1C; i <= 0x1D; i++){
-		reg = readReg(spiHandle, i);
-		sprintf(smallStrBuffer, "reg %x = %x\n", i, reg);
-		TextOut(smallStrBuffer);
-	}
-}
-
-//**********************application specific code*********************//
-
-void initRobo(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address){
-	//reset and flush buffer
-	NRFinit(spiHandle);
-
-	//enable RX interrupts, disable TX interrupts
-	RXinterrupts(spiHandle);
-
-	//set the frequency channel
-	setFreqChannel(spiHandle, freqChannel);
-
-	//enable pipe 0 and 1, diabable all other pipes
-	uint8_t dataPipes = 0b0000011; //the Bits from right to left define which data pipes to activate, starting from pipe 0 on the rightmost bit.
-	setDataPipes(spiHandle, dataPipes);
-
-	//set the RX buffer size to x bytes
-	setRXbufferSize(spiHandle, 12);
-
-	uint8_t addressLong[5] = {0x12, 0x34, 0x56, 0x78, 0x90 + address};
-	//set the RX address of channel 1
-	setRXaddress(spiHandle, addressLong, 1);
-	writeReg(spiHandle, FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
-
-	setLowSpeed(spiHandle);
-
-	//go to RX mode and start listening
-	powerUpRX(spiHandle);
-
-}
-
-void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address[5]){
-	//reset and flush buffer
-	NRFinit(spiHandle);
-
-	//enable TX interrupts, disable RX interrupts
-	TXinterrupts(spiHandle);
-
-	//set the frequency channel
-	setFreqChannel(spiHandle, freqChannel);
-
-	//is this overwritten again whenever we transmit?
-	setDataPipes(spiHandle, ERX_P0);
-
-	//set the RX buffer size to x bytes
-	setRXbufferSize(spiHandle, 12);
-
-	//set the TX address of
-	setTXaddress(spiHandle, address);
-
-	//set auto retransmit: disabled
-	writeReg(spiHandle, SETUP_RETR, 0x00);
-	writeReg(spiHandle, FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
-
-	setLowSpeed(spiHandle);
-
-	//enableAutoRetransmitSlow(spiHandle);
-
-	//go to TX mode and be ready to listen
-	powerUpTX(spiHandle);
-}
-
-uint8_t sendPacketPart1(SPI_HandleTypeDef* spiHandle, uint8_t packet[12]){
-
-	uint8_t addressLong[5] = {0x12, 0x34, 0x56, 0x78, 0x90 + (packet[0] >> 4)};
-
-	setTXaddress(spiHandle, addressLong);
-	sendData(spiHandle, packet, 12);
-
-
-	//returning last byte of address, but no call to this function ever appears to use the return value
-	return addressLong[4];
-}
-
 //called by the basestation to receive ack data
-//if there is data, it will be sent to the computer
-int8_t getAck(SPI_HandleTypeDef* spiHandle){
+//if there is data, it will be stored in the given ack_payload array
+//returns 1 when there is a payload
+//on error, returns 0, -1 or -2.
+int8_t getAck(SPI_HandleTypeDef* spiHandle, uint8_t* ack_payload) {
 	/*
 	 * The following paragraph assumes that ACKs are enabled (e.g. we expect packets to be answered with ACKs).
 	 *
@@ -559,18 +447,9 @@ int8_t getAck(SPI_HandleTypeDef* spiHandle){
 			//read payload here!
 
 			 //TODO: I don't really like to set it to a fixed length here. I would rather like to read a global macro (#define PAYLOAD_LENGTH ?)
-			uint8_t ack_payload[12];
 			readData(spiHandle, ack_payload, 12);
 
 			clearInterrupts(spiHandle);
-
-			//copy all bytes as hex values to a string
-			for(uint8_t i=0; i<12; i++) {
-				sprintf(smallStrBuffer, "%x", ack_payload[i]);
-			}
-
-			//print string to serial interface (USB)
-			TextOut(smallStrBuffer);
 
 			return 1; //success
 		}
@@ -595,32 +474,6 @@ int8_t getAck(SPI_HandleTypeDef* spiHandle){
 	return 0; //no ack payload received
 }
 
-/*
- * It looks like the code below will be called as an interrupt service routine whenever the
- * robot receives a packet.
- */
-dataPacket dataStruct;
-void roboCallback(SPI_HandleTypeDef* spiHandle){
-		uint8_t dataArray[8];
 
 
-		ceLow(spiHandle);
-		readData(spiHandle, dataArray, 12);
-		dataStruct.robotID = dataArray[0] >> 4;
-		dataStruct.robotVelocity = ((dataArray[0] & 0xF) << 8) + dataArray[1];
-		dataStruct.movingDirection = (dataArray[2] << 1) + (dataArray[3] >> 4);
-		dataStruct.rotationDirection = dataArray[3] & 0x8;
-		dataStruct.angularVelocity = ((dataArray[3] & 0x7) << 8) + dataArray[4];
-		dataStruct.kickForce = dataArray[5];
-		dataStruct.kick = dataArray[6] & 0x40;
-		dataStruct.chipper = dataArray[6] & 0x20;
-		dataStruct.forced = dataArray[6] & 0x10;
-		dataStruct.driblerDirection = dataArray[6] & 0x8;
-		dataStruct.driblerSpeed = dataArray[6] & 0x7;
-		//clear RX interrupt
-		writeReg(spiHandle, STATUS, RX_DR);
-
-		ceHigh(spiHandle);
-
-	}
 

@@ -6,6 +6,7 @@
  *
  *  This is the low level function library for communicating with
  *  an nRF24L01 wireless module.
+ *  Those functions are supposed to be only called by functions from within the library itself (from functions in myNRF24.c)
  */
 #include "myNRF24basic.h"
 #include "gpio.h" //for pin definitions and GPIO functions
@@ -327,53 +328,3 @@ int8_t readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuff
 
 
 
-/*
- * Pin setters
- */
-
-
-
-//put the nss pin corresponding to the SPI used high
-void nssHigh(SPI_HandleTypeDef* spiHandle){
-	if(spiHandle->Instance == SPI1){
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_SET);
-
-	}
-	else{
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_SET);
-	}
-}
-
-//put the nss pin corresponding to the SPI used low
-void nssLow(SPI_HandleTypeDef* spiHandle){
-	//HAL_Delay(1);
-	if(spiHandle->Instance == SPI1){
-		HAL_GPIO_WritePin(GPIOD, CSN_SPI1_Pin, GPIO_PIN_RESET);
-
-	}
-	else{
-		HAL_GPIO_WritePin(GPIOD, CSN_SPI3_Pin, GPIO_PIN_RESET);
-	}
-}
-
-//put the ce pin corresponding to the SPI used high
-void ceHigh(SPI_HandleTypeDef* spiHandle){
-	if(spiHandle->Instance == SPI1){
-		HAL_GPIO_WritePin(GPIOD, CE_SPI1_Pin, GPIO_PIN_SET);
-
-	}
-	else{
-		HAL_GPIO_WritePin(GPIOD, CE_SPI3_Pin, GPIO_PIN_SET);
-	}
-}
-
-//put the ce pin corresponding to the SPI used low
-void ceLow(SPI_HandleTypeDef* spiHandle){
-	if(spiHandle->Instance == SPI1){
-		HAL_GPIO_WritePin(GPIOD, CE_SPI1_Pin, GPIO_PIN_RESET);
-
-	}
-	else{
-		HAL_GPIO_WritePin(GPIOD, CE_SPI3_Pin, GPIO_PIN_RESET);
-	}
-}

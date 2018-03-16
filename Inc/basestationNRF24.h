@@ -13,25 +13,37 @@
 
 #include "myNRF24.h"
 
+//------------------------------ initTX ------------------------------//
+//rest and init
+//mask right interrupts
+//set frequency
+//enable ack pipe
+//set RX buffer size
+//set TX address + pipe 0 address
+//powerUpTX
+void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address[5]);
+
+
+//sends a packet from the basestation to a robot
+uint8_t sendPacket(SPI_HandleTypeDef* spiHandle, uint8_t packet[12]);
+
+
 
 /*
  * Pin setters
  */
 
-
-
 //put the nss pin corresponding to the SPI used high
-void nssHigh(SPI_HandleTypeDef* spiHandle);
+void nrf24nssHigh();
 
 //put the nss pin corresponding to the SPI used low
-void nssLow(SPI_HandleTypeDef* spiHandle);
+void nrf24nssLow();
 
 //put the ce pin corresponding to the SPI used high
-void ceHigh(SPI_HandleTypeDef* spiHandle);
+void nrf24ceHigh();
 
 //put the ce pin corresponding to the SPI used low
-void ceLow(SPI_HandleTypeDef* spiHandle);
-
+void nrf24ceLow();
 
 
 #endif /* BASESTATIONNRF24_H_ */
