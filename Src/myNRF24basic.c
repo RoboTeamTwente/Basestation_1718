@@ -16,12 +16,16 @@
 
 
 //read the interrupt pin
+/*
+ *
+ * implementation on the side of the basestation, I believe
 uint8_t irqRead(SPI_HandleTypeDef* spiHandle){
 	if(spiHandle->Instance == SPI1)
 		return !HAL_GPIO_ReadPin(GPIOA, IRQ_SPI1_Pin);
 	else
 		return !HAL_GPIO_ReadPin(GPIOD, IRQ_SPI3_Pin);
 }
+*/
 
 //returns 0 on success; -1 on error
 int8_t clearInterrupts(SPI_HandleTypeDef* spiHandle) {
@@ -318,13 +322,4 @@ int8_t readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuff
 
 	return 0; //no error
 }
-
-
-
-
-
-
-
-
-
 

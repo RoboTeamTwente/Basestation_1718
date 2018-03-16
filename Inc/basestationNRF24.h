@@ -45,5 +45,6 @@ void nrf24ceHigh();
 //put the ce pin corresponding to the SPI used low
 void nrf24ceLow();
 
+uint8_t nrf24irqRead();
 
 #endif /* BASESTATIONNRF24_H_ */

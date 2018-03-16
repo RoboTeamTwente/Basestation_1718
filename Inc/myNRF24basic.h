@@ -174,10 +174,30 @@ enum FEATURE_FLAG {
 };
 
 
+SPI_HandleTypeDef* spiHandle;
 
+/*
+ * Below we have pointers to functions implementing the pin setters.
+ * The implementations are usually as simple as setting a GPIO pin high or low
+ * by utilizing HAL_GPIO_WritePin(PORT, PIN, VALUE);
+ * We are using this approach, because the robot apparently does not use
+ * the CE pin. Therefore it will leave the function body empty
+ * (but it still needs to declare it).
+ */
+//put the nss pin corresponding to the SPI used high
+void (*nssHigh)();
+//put the nss pin corresponding to the SPI used low
+void (*nssLow)();
+//put the ce pin corresponding to the SPI used high
+void (*ceHigh)();
+//put the ce pin corresponding to the SPI used low
+void (*ceLow)();
+
+//reading the irq pin state
+uint8_t (*irqRead)();
 
 //read the interrupt pin
-uint8_t irqRead(SPI_HandleTypeDef* spiHandle);
+//uint8_t irqRead(SPI_HandleTypeDef* spiHandle);
 
 //returns 0 on success; -1 on error
 int8_t clearInterrupts(SPI_HandleTypeDef* spiHandle);
@@ -216,24 +236,6 @@ void readRegMultiDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataB
 //output will be stored in the array dataBuffer
 //returns 0 on success; -1 on error
 int8_t readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer, uint8_t size);
-
-
-
-
-
-
-//put the nss pin corresponding to the SPI used high
-void nssHigh(SPI_HandleTypeDef* spiHandle);
-//put the nss pin corresponding to the SPI used low
-void nssLow(SPI_HandleTypeDef* spiHandle);
-//put the ce pin corresponding to the SPI used high
-void ceHigh(SPI_HandleTypeDef* spiHandle);
-
-//put the ce pin corresponding to the SPI used low
-void ceLow(SPI_HandleTypeDef* spiHandle);
-
-
-
 
 
 

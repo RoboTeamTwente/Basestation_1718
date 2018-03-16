@@ -32,7 +32,20 @@
 //reset it and enable pipe 1 and 0
 //set pipeWith to 1
 //flush TX and RX buffer
-void NRFinit(SPI_HandleTypeDef* spiHandle){
+//arguments: SpiHandle and functions which implement pin setters for NSS and CE and reader for IRQ
+void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*nrf24nssLow)(), void (*nrf24ceHigh)(), void (*nrf24ceLow)(), uint8_t (*nrf24irqRead)() ){
+	//set references to pin setter functions
+	nssHigh = nrf24nssHigh;
+	nssLow = nrf24nssLow;
+	ceHigh = nrf24ceHigh;
+	ceLow = nrf24ceLow;
+
+	//irq reader
+	irqRead = nrf24irqRead;
+
+	//global reference to spiHandle
+	spiHandle = nrf24spiHandle;
+
 	//reset system
 
 	/*
@@ -426,7 +439,7 @@ int8_t getAck(SPI_HandleTypeDef* spiHandle, uint8_t* ack_payload) {
 	 * check the existence of an ACK payload by reading the RX_DR flag.
 	 *
 	 */
-	if(irqRead(spiHandle)){
+	if(irqRead()){
 		//uint8_t succesful = 0;
 		uint8_t status_reg = readReg(spiHandle, STATUS);
 		ceLow(spiHandle);

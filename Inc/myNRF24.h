@@ -27,7 +27,7 @@
 //reset it and enable pipe 1 and 0
 //set pipeWith to 1
 //flush TX and RX buffer
-void NRFinit(SPI_HandleTypeDef* spiHandle);
+void NRFinit(SPI_HandleTypeDef* spiHandle, void (*nrf24nssHigh)(), void (*nrf24nssLow)(), void (*nrf24ceHigh)(), void (*nrf24ceLow)(), uint8_t (*nrf24irqRead)() );
 
 //reset to reset value on page 54
 void softResetRegisters(SPI_HandleTypeDef* spiHandle);

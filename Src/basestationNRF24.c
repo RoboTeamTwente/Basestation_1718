@@ -14,8 +14,8 @@
 #include "basestationNRF24.h"
 
 void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address[5]){
-	//reset and flush buffer
-	NRFinit(spiHandle);
+
+	NRFinit(spiHandle, nrf24nssHigh, nrf24nssLow, nrf24ceHigh, nrf24ceLow, nrf24irqRead );
 
 	//enable TX interrupts, disable RX interrupts
 	TXinterrupts(spiHandle);
@@ -94,4 +94,9 @@ void nrf24ceHigh(){
 //put the ce pin corresponding to the SPI used low
 void nrf24ceLow(){
 	HAL_GPIO_WritePin(GPIOD, CE_SPI3_Pin, GPIO_PIN_RESET);
+}
+
+//reading if an interrupt happened
+uint8_t nrf24irqRead(){
+	return !HAL_GPIO_ReadPin(GPIOD, IRQ_SPI3_Pin);
 }

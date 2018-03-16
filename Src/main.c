@@ -54,9 +54,12 @@
 
 /* USER CODE BEGIN Includes */
 #include "myNRF24.h"
+#include "basestationNRF24.h"
 #include "TextOut.h"
 #include "packing.h"
 #include "discoveryboard.h"
+
+
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -189,8 +192,9 @@ int main(void)
 			*/
 			createRobotPacket(id, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
 			TextOut("Sending packet..\n");
-			sendPacketPart1(&hspi3, madeUpPacket);
-			if(getAck(&hspi3) == 1) {
+			sendPacket(&hspi3, madeUpPacket);
+			uint8_t ack_payload[12];
+			if(getAck(&hspi3, ack_payload) == 1) {
 				TextOut("Got ACK! :)\n");
 			}
 			else {
@@ -209,7 +213,7 @@ int main(void)
 		}
 		if(blue){
 			//initBase(&hspi3, 0x2A, address);
-			printAllRegisters(&hspi3);
+			//printAllRegisters(&hspi3);
 			HAL_Delay(100);
 			while(blue)
 				HAL_Delay(100);
@@ -241,7 +245,7 @@ int main(void)
 		}
 
 		if(remote == 1){
-			sendPacketPart1(&hspi3, madeUpPacket);
+			sendPacket(&hspi3, madeUpPacket);
 			usbLength = 0;
 			HAL_Delay(10);
 		}
@@ -249,7 +253,7 @@ int main(void)
 
 		if(usbLength == 12){
 
-			sendPacketPart1(&hspi3, usbData);
+			sendPacket(&hspi3, usbData);
 			usbLength = 0;
 		}
 
@@ -259,7 +263,8 @@ int main(void)
 			//fun();
 		}
 
-		getAck(&hspi3);
+		uint8_t ack_payload[12];
+		getAck(&hspi3, ack_payload);
 
 
   /* USER CODE END WHILE */
