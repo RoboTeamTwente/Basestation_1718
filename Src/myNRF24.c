@@ -82,16 +82,16 @@ void softResetRegisters(SPI_HandleTypeDef* spiHandle){
 	writeReg(RF_SETUP, 0x0E);
 	writeReg(STATUS, 0x00);
 	//register 0x08 and 0x09 are read only
-	writeRegMulti(spiHandle, RX_ADDR_P0, multRegData, 5);
+	writeRegMulti(RX_ADDR_P0, multRegData, 5);
 
 	for(int i = 0; i < 5; i++){multRegData[i] = 0xC2;}
-	writeRegMulti(spiHandle, RX_ADDR_P1, multRegData, 5);
+	writeRegMulti(RX_ADDR_P1, multRegData, 5);
 	writeReg(RX_ADDR_P2, 0xC3);
 	writeReg(RX_ADDR_P3, 0xC4);
 	writeReg(RX_ADDR_P4, 0xC5);
 	writeReg(RX_ADDR_P5, 0xC6);
 	for(int i = 0; i < 5; i++){multRegData[i] = 0xE7;}
-	writeRegMulti(spiHandle, TX_ADDR, multRegData, 5);
+	writeRegMulti(TX_ADDR, multRegData, 5);
 	writeReg(RX_PW_P0, 0x00);
 	writeReg(RX_PW_P1, 0x00);
 	writeReg(RX_PW_P2, 0x00);
@@ -110,9 +110,9 @@ void softResetRegisters(SPI_HandleTypeDef* spiHandle){
 //set own address note: only data pipe 0 is used in this implementation
 //returns 0 on success; -1 on error
 int8_t setTXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5]){
-	if(writeRegMulti(spiHandle, RX_ADDR_P0, address, 5) != 0) // set RX address pipe 0 for auto acks
+	if(writeRegMulti(RX_ADDR_P0, address, 5) != 0) // set RX address pipe 0 for auto acks
 		return -1; //error
-	if(writeRegMulti(spiHandle, TX_ADDR, address, 5) != 0) // set TX address
+	if(writeRegMulti(TX_ADDR, address, 5) != 0) // set TX address
 		return -1; //error
 
 	return 0; //success
@@ -125,7 +125,7 @@ int8_t setRXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5], uint8_t pi
 	if(pipeNumber == 0 || pipeNumber > 5)
 		return -1; //error. invalid pipeNumber
 
-	return writeRegMulti(spiHandle, RX_ADDR_P0 + pipeNumber, address, 5);
+	return writeRegMulti(RX_ADDR_P0 + pipeNumber, address, 5);
 }
 
 

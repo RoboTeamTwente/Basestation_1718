@@ -60,7 +60,7 @@ int8_t writeReg(uint8_t reg, uint8_t data){
 
 //write to a multi-byte register
 //returns 0 on success; -1 on error
-int8_t writeRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* pdata, uint8_t size){
+int8_t writeRegMulti(uint8_t reg, uint8_t* pdata, uint8_t size){
 	if(!(reg == RX_ADDR_P0 || reg == RX_ADDR_P1 || reg == TX_ADDR)){
 		//TextOut("Error, invalid register. It is either read only, single byte or non-existing.\n");
 		return -1;
