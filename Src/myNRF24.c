@@ -63,8 +63,8 @@ void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*n
 	//set RX pipe with of pipe 1 to 1 byte.
 	writeReg(RX_PW_P1, 0x01);
 
-	flushRX(spiHandle);
-	flushTX(spiHandle);
+	flushRX();
+	flushTX();
 
 }
 
@@ -268,7 +268,7 @@ void powerUpTX(){
 	uint8_t reg_config = readReg(CONFIG);
 
 	//flush TX buffer
-	flushTX(spiHandle);
+	flushTX();
 
 	//set power up bit: bit 1 of reg 0
 	reg_config = setBit(reg_config, 1, 1);
@@ -282,7 +282,7 @@ void powerUpTX(){
 
 //device power up, and be ready to receive bytes.
 void powerUpRX(){
-	flushRX(spiHandle);
+	flushRX();
 	writeReg(CONFIG, PRIM_RX|PWR_UP);
 	//put CE pin high ->  start listening
 	ceHigh(spiHandle);
@@ -318,7 +318,7 @@ void sendData(uint8_t data[], uint8_t length){
 
 	ceLow(spiHandle);
 
-	flushTX(spiHandle);
+	flushTX();
 
 	nssLow(spiHandle);
 	uint8_t spi_command = NRF_W_TX_PAYLOAD; // W_TX_PAYLOAD
@@ -438,7 +438,7 @@ int8_t getAck(uint8_t* ack_payload) {
 			//but we might want to decide to retransmit packets in a later implementation.
 			//For now I will just reset the flag for this interrupt and go on
 			writeReg(STATUS, status_reg & MAX_RT);
-			flushTX(spiHandle);
+			flushTX();
 			return -1;
 		}
 		else if(status_reg & TX_DS & RX_DR){
