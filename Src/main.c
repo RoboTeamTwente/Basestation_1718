@@ -193,6 +193,7 @@ int main(void)
 			createRobotPacket(id, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
 			TextOut("Sending packet..\n");
 			sendPacket(&hspi3, madeUpPacket);
+
 			uint8_t ack_payload[12];
 			if(getAck(&hspi3, ack_payload) == 1) {
 				TextOut("Got ACK! :)\n");
@@ -206,8 +207,9 @@ int main(void)
 				sprintf(smallStrBuffer, "RX_DR: %i, TX_DS: %i, MAX_RT: %i\n", rx_dr_flag, tx_ds_flag, max_rt_flag);
 				TextOut(smallStrBuffer);
 			}
+
 			TextOut("\n");
-			HAL_Delay(500);
+			HAL_Delay(100);
 			fun(); //delay with a LED animation
 			continue; //skip to the next loop iteration
 		}

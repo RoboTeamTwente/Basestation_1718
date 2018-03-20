@@ -20,12 +20,12 @@ int8_t clearInterrupts(SPI_HandleTypeDef* spiHandle) {
 	//0x70 clears the interrupts for: Rx Data Ready, Tx Data Sent and Maximum Retransmits
 	//see datasheet page 56 for details
 	//forward return code (error code) of writeReg() to caller of clearInterrupts()
-	return writeReg(spiHandle, STATUS, (RX_DR | TX_DS | MAX_RT));
+	return writeReg(STATUS, (RX_DR | TX_DS | MAX_RT));
 }
 
 //write to a register
 //returns 0 on success; -1 on error
-int8_t writeReg(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data){
+int8_t writeReg(uint8_t reg, uint8_t data){
 	if(reg == 	RX_ADDR_P0 || reg == RX_ADDR_P1 || reg == TX_ADDR){
 		//TextOut("Error, this is a multi-byte register. use writeRegMulti instead\n");
 		return -1; //error
@@ -125,7 +125,6 @@ uint8_t readReg(SPI_HandleTypeDef* spiHandle, uint8_t reg){
 //returns 0 on success; -1 on error
 int8_t readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer, uint8_t size){
 	if(reg > 0x1D){
-		TextOut("Error, invalid register\n");
 		return -1; //error
 	}
 	//commands can only be given after a falling edge of the nss pin

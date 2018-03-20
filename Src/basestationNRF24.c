@@ -18,7 +18,15 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 	NRFinit(spiHandle, nrf24nssHigh, nrf24nssLow, nrf24ceHigh, nrf24ceLow, nrf24irqRead );
 
 	//enable TX interrupts, disable RX interrupts
-	TXinterrupts(spiHandle);
+	//TXinterrupts(spiHandle);
+
+	//set interrupts
+	uint8_t config_reg = readReg(spiHandle, CONFIG);
+	config_reg &= ~MASK_RX_DR;   //enable for RX_DR
+	config_reg &= ~MASK_TX_DS;  //enable for TX_DS
+	config_reg |= MASK_MAX_RT; //disable for MAX_RT
+	writeReg( CONFIG, config_reg);
+
 
 	//set the frequency channel
 	setFreqChannel(spiHandle, freqChannel);
@@ -33,10 +41,10 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 	setTXaddress(spiHandle, address);
 
 	//set auto retransmit: disabled
-	writeReg(spiHandle, SETUP_RETR, 0x00);
+	writeReg( SETUP_RETR, 0x00);
 
 	//enable dynamic packet length, ack payload, dynamic acks
-	writeReg(spiHandle, FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
+	writeReg( FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
 
 	setLowSpeed(spiHandle);
 

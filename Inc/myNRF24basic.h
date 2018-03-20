@@ -205,7 +205,7 @@ int8_t clearInterrupts(SPI_HandleTypeDef* spiHandle);
 
 //write to a register
 //returns 0 on success; -1 on error
-int8_t writeReg(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t data);
+int8_t writeReg(uint8_t reg, uint8_t data);
 
 //write to a multi-byte register
 //returns 0 on success; -1 on error
