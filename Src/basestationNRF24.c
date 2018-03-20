@@ -21,7 +21,7 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 	//TXinterrupts(spiHandle);
 
 	//set interrupts
-	uint8_t config_reg = readReg(spiHandle, CONFIG);
+	uint8_t config_reg = readReg(CONFIG);
 	config_reg &= ~MASK_RX_DR;   //enable for RX_DR
 	config_reg &= ~MASK_TX_DS;  //enable for TX_DS
 	config_reg |= MASK_MAX_RT; //disable for MAX_RT

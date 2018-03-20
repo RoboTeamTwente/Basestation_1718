@@ -200,7 +200,7 @@ int main(void)
 			}
 			else {
 				TextOut("No ACK... :(\n");
-				uint8_t status_reg = readReg(&hspi3, STATUS);
+				uint8_t status_reg = readReg(STATUS);
 				uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
 				uint8_t tx_ds_flag = ((status_reg & TX_DS) > 0);
 				uint8_t max_rt_flag = ((status_reg & MAX_RT) > 0);

@@ -146,7 +146,7 @@ int8_t enableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
 	if(pipeNumber > 5)
 		return -1; //error: invalid pipeNumber
 
-	uint8_t en_rxaddr_val = readReg(spiHandle, EN_RXADDR);
+	uint8_t en_rxaddr_val = readReg(EN_RXADDR);
 	en_rxaddr_val |= (1 << pipeNumber);
 
 	return writeReg(EN_RXADDR, en_rxaddr_val);
@@ -163,7 +163,7 @@ int8_t disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
 		//TextOut("Error, max pipe number = 5 \n");
 		return -1; //error: invalid pipeNumber
 	}
-	uint8_t pipeEnableReg = readReg(spiHandle, EN_RXADDR);
+	uint8_t pipeEnableReg = readReg(EN_RXADDR);
 	pipeEnableReg = setBit(pipeEnableReg, pipeNumber, 0);
 	writeReg(EN_RXADDR, pipeEnableReg);// disable pipe
 	writeReg(RX_PW_P0 + pipeNumber, 0); //set buffer size to 0;
@@ -184,7 +184,7 @@ int8_t setRXbufferSize(SPI_HandleTypeDef* spiHandle, uint8_t size){
 		return -1; //error: size too big
 	}
 
-	uint8_t rx_addr_reg = readReg(spiHandle, EN_RXADDR);
+	uint8_t rx_addr_reg = readReg(EN_RXADDR);
 
 	//for every activated data pipe in EN_RXADDR, set the buffer size in RX_PW_PX to "size" amount of bytes.
 	for(uint8_t i = 0; i < 6; i++){
@@ -202,7 +202,7 @@ int8_t setRXbufferSize(SPI_HandleTypeDef* spiHandle, uint8_t size){
 //make sure interrupts for the TX functions are enabled
 //and those for the RX functions not
 void TXinterrupts(SPI_HandleTypeDef* spiHandle){
-	uint8_t config_reg = readReg(spiHandle, CONFIG);
+	uint8_t config_reg = readReg(CONFIG);
 	/* Register 0x00 (CONFIG)
 	 * Bit 6: MASK_RX_DR
 	 * Bit 5: MASK_TX_DS
@@ -229,7 +229,7 @@ void TXinterrupts(SPI_HandleTypeDef* spiHandle){
 //make sure interrupts for the RX functions are enabled
 //and those for the TX functions not
 void RXinterrupts(SPI_HandleTypeDef* spiHandle){
-	uint8_t reg_config = readReg(spiHandle, CONFIG);
+	uint8_t reg_config = readReg(CONFIG);
 	reg_config = setBit(reg_config, 6, 0);
 	reg_config = setBit(reg_config, 5, 1);
 	reg_config = setBit(reg_config, 4, 1);
@@ -241,7 +241,7 @@ void RXinterrupts(SPI_HandleTypeDef* spiHandle){
 //power down the device. SPI stays active.
 void powerDown(SPI_HandleTypeDef* spiHandle){
 	ceLow(spiHandle); //go to standby mode
-	uint8_t reg_config = readReg(spiHandle, CONFIG);
+	uint8_t reg_config = readReg(CONFIG);
 
 	//clear power bit: bit 2 to 0
 	reg_config = setBit(reg_config, 2, 0);
@@ -253,7 +253,7 @@ void powerDown(SPI_HandleTypeDef* spiHandle){
 void powerUp(SPI_HandleTypeDef* spiHandle){
 	ceLow(spiHandle);
 
-	uint8_t reg_config = readReg(spiHandle, CONFIG);
+	uint8_t reg_config = readReg(CONFIG);
 
 	//set power up bit: bit 2 of reg 0.
 	reg_config = reg_config | PWR_UP;
@@ -265,7 +265,7 @@ void powerUp(SPI_HandleTypeDef* spiHandle){
 //device power up and start listening
 void powerUpTX(SPI_HandleTypeDef* spiHandle){
 	ceLow(spiHandle); //stay in standby mode, until there is data to send.
-	uint8_t reg_config = readReg(spiHandle, CONFIG);
+	uint8_t reg_config = readReg(CONFIG);
 
 	//flush TX buffer
 	flushTX(spiHandle);
@@ -352,7 +352,7 @@ void readData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t leng
 int8_t readAllData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t max_length){
 	//while there is data in the RX FIFO, read byte per byte
 	uint8_t bytes_read = 0;
-	while((readReg(spiHandle, FIFO_STATUS) & RX_EMPTY) != 0) {
+	while((readReg(FIFO_STATUS) & RX_EMPTY) != 0) {
 		nssLow(spiHandle);
 
 		uint8_t command = NRF_R_RX_PAYLOAD; //R_RX_PAYLOAD
@@ -370,7 +370,7 @@ int8_t readAllData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t
 }
 
 void setLowSpeed(SPI_HandleTypeDef* spiHandle){
-	uint8_t rfsetup_reg = readReg(spiHandle, RF_SETUP);
+	uint8_t rfsetup_reg = readReg(RF_SETUP);
 	rfsetup_reg |= RF_DR_LOW;
 	rfsetup_reg &= ~RF_DR_HIGH;
 	writeReg(RF_SETUP, rfsetup_reg);
@@ -430,7 +430,7 @@ int8_t getAck(SPI_HandleTypeDef* spiHandle, uint8_t* ack_payload) {
 	 */
 	if(irqRead()){
 		//uint8_t succesful = 0;
-		uint8_t status_reg = readReg(spiHandle, STATUS);
+		uint8_t status_reg = readReg(STATUS);
 		ceLow(spiHandle);
 		if(status_reg & MAX_RT){
 			//maximum retransmissions reached without receiving an ACK

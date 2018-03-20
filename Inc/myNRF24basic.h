@@ -215,7 +215,7 @@ int8_t writeRegMulti(uint8_t reg, uint8_t* pdata, uint8_t size);
 uint8_t readRegDebug(SPI_HandleTypeDef* spiHandle, uint8_t reg);
 
 //read a register
-uint8_t readReg(SPI_HandleTypeDef* spiHandle, uint8_t reg);
+uint8_t readReg(uint8_t reg);
 
 //read a multi-byte register
 //output will be stored in the array dataBuffer

@@ -95,7 +95,7 @@ int8_t writeRegMulti(uint8_t reg, uint8_t* pdata, uint8_t size){
 }
 
 //read a register
-uint8_t readReg(SPI_HandleTypeDef* spiHandle, uint8_t reg){
+uint8_t readReg(uint8_t reg){
 	if(reg > 0x1D){
 		//TextOut("Error, invalid register\n");
 		return 0xF0; //error
