@@ -174,7 +174,7 @@ int main(void)
 			 */
 			// see page 54 and further for reset values
 			//writeReg(&hspi3, STATUS, 0x7E);
-			clearInterrupts(&hspi3);
+			clearInterrupts();
 
 
 			/*
@@ -192,10 +192,10 @@ int main(void)
 			*/
 			createRobotPacket(id, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
 			TextOut("Sending packet..\n");
-			sendPacket(&hspi3, madeUpPacket);
+			sendPacket(madeUpPacket);
 
 			uint8_t ack_payload[12];
-			if(getAck(&hspi3, ack_payload) == 1) {
+			if(getAck(ack_payload) == 1) {
 				TextOut("Got ACK! :)\n");
 			}
 			else {
@@ -247,7 +247,7 @@ int main(void)
 		}
 
 		if(remote == 1){
-			sendPacket(&hspi3, madeUpPacket);
+			sendPacket(madeUpPacket);
 			usbLength = 0;
 			HAL_Delay(10);
 		}
@@ -255,7 +255,7 @@ int main(void)
 
 		if(usbLength == 12){
 
-			sendPacket(&hspi3, usbData);
+			sendPacket(usbData);
 			usbLength = 0;
 		}
 
@@ -266,7 +266,7 @@ int main(void)
 		}
 
 		uint8_t ack_payload[12];
-		getAck(&hspi3, ack_payload);
+		getAck(ack_payload);
 
 
   /* USER CODE END WHILE */

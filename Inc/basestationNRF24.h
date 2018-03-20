@@ -25,7 +25,7 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 
 
 //sends a packet from the basestation to a robot
-uint8_t sendPacket(SPI_HandleTypeDef* spiHandle, uint8_t packet[12]);
+uint8_t sendPacket(uint8_t packet[12]);
 
 
 

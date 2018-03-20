@@ -13,9 +13,9 @@
 
 #include "basestationNRF24.h"
 
-void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address[5]){
+void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel, uint8_t address[5]){
 
-	NRFinit(spiHandle, nrf24nssHigh, nrf24nssLow, nrf24ceHigh, nrf24ceLow, nrf24irqRead );
+	NRFinit(spiHandle24, nrf24nssHigh, nrf24nssLow, nrf24ceHigh, nrf24ceLow, nrf24irqRead );
 
 	//enable TX interrupts, disable RX interrupts
 	//TXinterrupts(spiHandle);
@@ -29,16 +29,16 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 
 
 	//set the frequency channel
-	setFreqChannel(spiHandle, freqChannel);
+	setFreqChannel(freqChannel);
 
 	//is this overwritten again whenever we transmit?
-	setDataPipes(spiHandle, ERX_P0);
+	setDataPipes(ERX_P0);
 
 	//set the RX buffer size to x bytes
-	setRXbufferSize(spiHandle, 12);
+	setRXbufferSize(12);
 
 	//set the TX address of
-	setTXaddress(spiHandle, address);
+	setTXaddress(address);
 
 	//set auto retransmit: disabled
 	writeReg( SETUP_RETR, 0x00);
@@ -55,7 +55,7 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address
 }
 
 
-uint8_t sendPacket(SPI_HandleTypeDef* spiHandle, uint8_t packet[12]){
+uint8_t sendPacket(uint8_t packet[12]){
 	//---------------------------TX loop----------------------------//
 	//get data from pc
 	//read address -> test
@@ -69,8 +69,8 @@ uint8_t sendPacket(SPI_HandleTypeDef* spiHandle, uint8_t packet[12]){
 
 	uint8_t addressLong[5] = {0x12, 0x34, 0x56, 0x78, 0x90 + (packet[0] >> 4)};
 
-	setTXaddress(spiHandle, addressLong);
-	sendData(spiHandle, packet, 12);
+	setTXaddress(addressLong);
+	sendData(packet, 12);
 
 
 	//returning last byte of address, but no call to this function ever appears to use the return value

@@ -52,7 +52,7 @@ void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*n
 	 * without actually turning it on and off.
 	 */
 	//softResetRegisters(spiHandle);
-	clearInterrupts(spiHandle);
+	clearInterrupts();
 
 	//enable RX pipe 0 and 1, disable all other pipes
 	writeReg(EN_RXADDR, ERX_P0|ERX_P1);
@@ -69,7 +69,7 @@ void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*n
 }
 
 //reset all register values to reset values on page 54, datasheet
-void softResetRegisters(SPI_HandleTypeDef* spiHandle){
+void softResetRegisters(){
 	uint8_t multRegData[5] = {0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
 
 	// see page 54 and further for reset values
@@ -109,7 +109,7 @@ void softResetRegisters(SPI_HandleTypeDef* spiHandle){
 
 //set own address note: only data pipe 0 is used in this implementation
 //returns 0 on success; -1 on error
-int8_t setTXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5]){
+int8_t setTXaddress(uint8_t address[5]){
 	if(writeRegMulti(RX_ADDR_P0, address, 5) != 0) // set RX address pipe 0 for auto acks
 		return -1; //error
 	if(writeRegMulti(TX_ADDR, address, 5) != 0) // set TX address
@@ -121,7 +121,7 @@ int8_t setTXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5]){
 //set the address you will send to
 //pipe 0 is reserved for acks: its address always equals the TX address and is set with setTXaddress
 //returns 0 on success; -1 on error
-int8_t setRXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5], uint8_t pipeNumber){
+int8_t setRXaddress(uint8_t address[5], uint8_t pipeNumber){
 	if(pipeNumber == 0 || pipeNumber > 5)
 		return -1; //error. invalid pipeNumber
 
@@ -130,7 +130,7 @@ int8_t setRXaddress(SPI_HandleTypeDef* spiHandle, uint8_t address[5], uint8_t pi
 
 
 //returns 0 on success; -1 on error
-int8_t setFreqChannel(SPI_HandleTypeDef* spiHandle, uint8_t channelNumber){
+int8_t setFreqChannel(uint8_t channelNumber){
 	if(channelNumber > 127)
 		//TextOut("Error, max channelNumber = 127\n");
 		return -1; //error: invalid channel Number
@@ -142,7 +142,7 @@ int8_t setFreqChannel(SPI_HandleTypeDef* spiHandle, uint8_t channelNumber){
 //enable a RX data pipe
 //note: pipe 0 is invalid, as it is used for acks
 //returns 0 on success; -1 on error
-int8_t enableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
+int8_t enableDataPipe(uint8_t pipeNumber){
 	if(pipeNumber > 5)
 		return -1; //error: invalid pipeNumber
 
@@ -154,7 +154,7 @@ int8_t enableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
 
 //disable a RX data pipe
 //note: pipe 0 is invalid, as it is used for acks
-int8_t disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
+int8_t disableDataPipe(uint8_t pipeNumber){
 	if(pipeNumber == 0){
 		//TextOut("Error, pipe 0 reserved for acks\n");
 		return -1; //error: invalid pipeNumber
@@ -173,12 +173,12 @@ int8_t disableDataPipe(SPI_HandleTypeDef* spiHandle, uint8_t pipeNumber){
 //choose which datapipes to use
 //Check out page 54 (Register Map) in the datasheet.
 //Set the Bits according to the datapipes in pipeEnable.
-void setDataPipes(SPI_HandleTypeDef* spiHandle, uint8_t pipeEnable){
+void setDataPipes(uint8_t pipeEnable){
 	writeReg(EN_RXADDR, pipeEnable);
 }
 
 //set the size of the RX buffer in bytes
-int8_t setRXbufferSize(SPI_HandleTypeDef* spiHandle, uint8_t size){
+int8_t setRXbufferSize(uint8_t size){
 	if(size > 32){
 		//TextOut("Error: size can not be bigger than 32 bytes\n");
 		return -1; //error: size too big
@@ -201,7 +201,7 @@ int8_t setRXbufferSize(SPI_HandleTypeDef* spiHandle, uint8_t size){
 
 //make sure interrupts for the TX functions are enabled
 //and those for the RX functions not
-void TXinterrupts(SPI_HandleTypeDef* spiHandle){
+void TXinterrupts(){
 	uint8_t config_reg = readReg(CONFIG);
 	/* Register 0x00 (CONFIG)
 	 * Bit 6: MASK_RX_DR
@@ -228,7 +228,7 @@ void TXinterrupts(SPI_HandleTypeDef* spiHandle){
 
 //make sure interrupts for the RX functions are enabled
 //and those for the TX functions not
-void RXinterrupts(SPI_HandleTypeDef* spiHandle){
+void RXinterrupts(){
 	uint8_t reg_config = readReg(CONFIG);
 	reg_config = setBit(reg_config, 6, 0);
 	reg_config = setBit(reg_config, 5, 1);
@@ -239,7 +239,7 @@ void RXinterrupts(SPI_HandleTypeDef* spiHandle){
 //---------------------------------modes----------------------------------//
 
 //power down the device. SPI stays active.
-void powerDown(SPI_HandleTypeDef* spiHandle){
+void powerDown(){
 	ceLow(spiHandle); //go to standby mode
 	uint8_t reg_config = readReg(CONFIG);
 
@@ -250,7 +250,7 @@ void powerDown(SPI_HandleTypeDef* spiHandle){
 }
 
 //go to standby. SPI stays active. consumes more power, but can go to TX or RX quickly
-void powerUp(SPI_HandleTypeDef* spiHandle){
+void powerUp(){
 	ceLow(spiHandle);
 
 	uint8_t reg_config = readReg(CONFIG);
@@ -263,7 +263,7 @@ void powerUp(SPI_HandleTypeDef* spiHandle){
 }
 
 //device power up and start listening
-void powerUpTX(SPI_HandleTypeDef* spiHandle){
+void powerUpTX(){
 	ceLow(spiHandle); //stay in standby mode, until there is data to send.
 	uint8_t reg_config = readReg(CONFIG);
 
@@ -281,7 +281,7 @@ void powerUpTX(SPI_HandleTypeDef* spiHandle){
 }
 
 //device power up, and be ready to receive bytes.
-void powerUpRX(SPI_HandleTypeDef* spiHandle){
+void powerUpRX(){
 	flushRX(spiHandle);
 	writeReg(CONFIG, PRIM_RX|PWR_UP);
 	//put CE pin high ->  start listening
@@ -292,7 +292,7 @@ void powerUpRX(SPI_HandleTypeDef* spiHandle){
 //--------------------------sending and receiving-------------------------//
 
 //flush the TX buffer
-void flushTX(SPI_HandleTypeDef* spiHandle){
+void flushTX(){
 	nssLow(spiHandle);
 	uint8_t sendData = NRF_FLUSH_TX; //FLUSH_TX
 	HAL_SPI_Transmit(spiHandle, &sendData, 1, 100);
@@ -301,7 +301,7 @@ void flushTX(SPI_HandleTypeDef* spiHandle){
 }
 
 //flush the RX buffer
-void flushRX(SPI_HandleTypeDef* spiHandle){
+void flushRX(){
 	nssLow(spiHandle);
 	uint8_t sendData = NRF_FLUSH_RX; //FLUSH_RX
 	HAL_SPI_Transmit(spiHandle, &sendData, 1, 100);
@@ -313,7 +313,7 @@ void flushRX(SPI_HandleTypeDef* spiHandle){
 //it should be put down manually when either MAX_RT or TX_DS is high
 //this can be done using the powerUpTX function
 //not doing this will cause the wireless module to stay on, which is a wast of energy.
-void sendData(SPI_HandleTypeDef* spiHandle, uint8_t data[], uint8_t length){
+void sendData(uint8_t data[], uint8_t length){
 	//TextOut("before sending\n");
 
 	ceLow(spiHandle);
@@ -338,7 +338,7 @@ void sendData(SPI_HandleTypeDef* spiHandle, uint8_t data[], uint8_t length){
 //read a byte from the buffer. only used in RX mode
 //Edit: the datasheet say it is used in RX mode. It doesn't say it is only(!) used in RX mode.
 //     Afaik, you also need to use it in TX mode when you want to read an ACK payload
-void readData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t length){
+void readData(uint8_t* receiveBuffer, uint8_t length){
 	nssLow(spiHandle);
 	uint8_t command = NRF_R_RX_PAYLOAD;
 	HAL_SPI_Transmit(spiHandle, &command, 1, 100);
@@ -349,7 +349,7 @@ void readData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t leng
 
 //read data from the RX FIFO until it's empty or until max_length has been reached
 //this function hasn't been tested yet.
-int8_t readAllData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t max_length){
+int8_t readAllData(uint8_t* receiveBuffer, uint8_t max_length){
 	//while there is data in the RX FIFO, read byte per byte
 	uint8_t bytes_read = 0;
 	while((readReg(FIFO_STATUS) & RX_EMPTY) != 0) {
@@ -369,21 +369,21 @@ int8_t readAllData(SPI_HandleTypeDef* spiHandle, uint8_t* receiveBuffer, uint8_t
 	return 0; //success
 }
 
-void setLowSpeed(SPI_HandleTypeDef* spiHandle){
+void setLowSpeed(){
 	uint8_t rfsetup_reg = readReg(RF_SETUP);
 	rfsetup_reg |= RF_DR_LOW;
 	rfsetup_reg &= ~RF_DR_HIGH;
 	writeReg(RF_SETUP, rfsetup_reg);
 }
 
-void enableAutoRetransmitSlow(SPI_HandleTypeDef* spiHandle){
+void enableAutoRetransmitSlow(){
 	uint8_t arc = 0x11; //auto retransmit count (ARC); how many packets to retransmit before giving up
 	writeReg(SETUP_RETR, arc&7);
 }
 
 //write ACK payload to module
 //this payload will be included in the payload of ACK packets when automatic acknowledgments are activated
-int8_t writeACKpayload(SPI_HandleTypeDef* spiHandle, uint8_t* payloadBytes, uint8_t payload_length) {
+int8_t writeACKpayload(uint8_t* payloadBytes, uint8_t payload_length) {
 	//This function should be called as often as a packet was received (either before or after reception),
 	//because the module can only hold up to 3 ACK packets.
 	//It will use up one of the packets as a response when it receives a packet.
@@ -411,7 +411,7 @@ int8_t writeACKpayload(SPI_HandleTypeDef* spiHandle, uint8_t* payloadBytes, uint
 //if there is data, it will be stored in the given ack_payload array
 //returns 1 when there is a payload
 //on error, returns 0, -1 or -2.
-int8_t getAck(SPI_HandleTypeDef* spiHandle, uint8_t* ack_payload) {
+int8_t getAck(uint8_t* ack_payload) {
 	/*
 	 * The following paragraph assumes that ACKs are enabled (e.g. we expect packets to be answered with ACKs).
 	 *
@@ -449,9 +449,9 @@ int8_t getAck(SPI_HandleTypeDef* spiHandle, uint8_t* ack_payload) {
 			//read payload here!
 
 			 //TODO: I don't really like to set it to a fixed length here. I would rather like to read a global macro (#define PAYLOAD_LENGTH ?)
-			readData(spiHandle, ack_payload, 12);
+			readData(ack_payload, 12);
 
-			clearInterrupts(spiHandle);
+			clearInterrupts();
 
 			return 1; //success
 		}

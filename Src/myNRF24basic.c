@@ -16,7 +16,7 @@
 
 
 //returns 0 on success; -1 on error
-int8_t clearInterrupts(SPI_HandleTypeDef* spiHandle) {
+int8_t clearInterrupts() {
 	//0x70 clears the interrupts for: Rx Data Ready, Tx Data Sent and Maximum Retransmits
 	//see datasheet page 56 for details
 	//forward return code (error code) of writeReg() to caller of clearInterrupts()
@@ -123,7 +123,7 @@ uint8_t readReg(uint8_t reg){
 //read a multi-byte register
 //output will be stored in the array dataBuffer
 //returns 0 on success; -1 on error
-int8_t readRegMulti(SPI_HandleTypeDef* spiHandle, uint8_t reg, uint8_t* dataBuffer, uint8_t size){
+int8_t readRegMulti(uint8_t reg, uint8_t* dataBuffer, uint8_t size){
 	if(reg > 0x1D){
 		return -1; //error
 	}
