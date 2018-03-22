@@ -34,8 +34,8 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 	setFreqChannel(freqChannel);
 
 	//enable pipe(s)
-	//setDataPipes(ERX_P1 | ERX_P0);
-	setDataPipes(ERX_P0);
+	setDataPipes(ERX_P1 | ERX_P0);
+	//setDataPipes(ERX_P0);
 
 
 
@@ -49,7 +49,7 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 	writeReg(SETUP_RETR, (ard<<3)|(arc&0b111));
 
 	//enable dynamic packet length, ack payload, dynamic acks
-	writeReg(FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
+	//writeReg(FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
 	//writeReg(FEATURE, EN_DPL | EN_DYN_ACK);
 
 	//enable Auto Acknowledgment for Pipe x
@@ -57,7 +57,7 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 	//writeReg(EN_AA, ENAA_P1);
 
 	//set the RX buffer size to x bytes
-	//setRXbufferSize(12);
+	setRXbufferSize(12);
 	//writeReg(DYNPD, DPL_P0); //enable dynamic packet length for data pipe x
 	//writeReg(DYNPD, DPL_P1); //enable dynamic packet length for data pipe x
 

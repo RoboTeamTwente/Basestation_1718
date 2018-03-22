@@ -174,7 +174,7 @@ int main(void)
 			 */
 			// see page 54 and further for reset values
 			//writeReg(&hspi3, STATUS, 0x7E);
-			//clearInterrupts();
+			clearInterrupts();
 
 
 			/*
@@ -194,6 +194,7 @@ int main(void)
 			TextOut("Sending packet..\n");
 			sendPacket(madeUpPacket);
 
+			/*
 			uint8_t ack_payload[12];
 			int8_t returncode = getAck(ack_payload);
 			if(returncode == 1) {
@@ -209,6 +210,7 @@ int main(void)
 				sprintf(smallStrBuffer, "Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up);
 				TextOut(smallStrBuffer);
 			}
+			*/
 
 			TextOut("\n");
 			HAL_Delay(100);
