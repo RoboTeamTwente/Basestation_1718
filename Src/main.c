@@ -121,8 +121,8 @@ int main(void)
 	//TextOut("Initializing Basestation.\n");
 	//initializing address with a pseudo value ("BAD FOOD").
 	//the address will be overwritten as soon as we have decided to which robot we talk
-	uint8_t address[5] = {0xBA, 0xAA, 0xAD, 0xF0, 0x0D};
-	initBase(&hspi3, 78  , address);
+	//uint8_t address[5] = {0xBA, 0xAA, 0xAD, 0xF0, 0x0D};
+	initBase(&hspi3, 78);
 	GPIO_PinState button6;
 	GPIO_PinState button5;
 	GPIO_PinState button4;
@@ -133,7 +133,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	HAL_Delay(1000);
+	HAL_Delay(500);
 
 	int id = 10;
 	int robot_vel = 0;
@@ -174,7 +174,7 @@ int main(void)
 			 */
 			// see page 54 and further for reset values
 			//writeReg(&hspi3, STATUS, 0x7E);
-			clearInterrupts();
+			//clearInterrupts();
 
 
 			/*
@@ -190,12 +190,13 @@ int main(void)
 				toggleMe = 1;
 			}
 			*/
-			createRobotPacket(id, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
+			createRobotPacket(id, 0, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
 			TextOut("Sending packet..\n");
 			sendPacket(madeUpPacket);
 
 			uint8_t ack_payload[12];
-			if(getAck(ack_payload) == 1) {
+			int8_t returncode = getAck(ack_payload);
+			if(returncode == 1) {
 				TextOut("Got ACK! :)\n");
 			}
 			else {
@@ -204,7 +205,8 @@ int main(void)
 				uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
 				uint8_t tx_ds_flag = ((status_reg & TX_DS) > 0);
 				uint8_t max_rt_flag = ((status_reg & MAX_RT) > 0);
-				sprintf(smallStrBuffer, "RX_DR: %i, TX_DS: %i, MAX_RT: %i\n", rx_dr_flag, tx_ds_flag, max_rt_flag);
+				uint8_t interrupt_up = irqRead();
+				sprintf(smallStrBuffer, "Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up);
 				TextOut(smallStrBuffer);
 			}
 

@@ -20,6 +20,15 @@
 #include "myNRF24.h"
 #include "myNRF24basic.h"
 
+//global defines which we need in the whole library
+//They have previously been defined as global variables in myNRF24basic.h
+SPI_HandleTypeDef* spiHandle;
+void (*nssHigh)();
+void (*nssLow)();
+void (*ceHigh)();
+void (*ceLow)();
+uint8_t (*irqRead)();
+
 //****************************high level library**************************//
 //********************the user may use these functions********************//
 
@@ -32,6 +41,7 @@
 //arguments: SpiHandle and functions which implement pin setters for NSS and CE and reader for IRQ
 void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*nrf24nssLow)(), void (*nrf24ceHigh)(), void (*nrf24ceLow)(), uint8_t (*nrf24irqRead)() ){
 	//set references to pin setter functions
+
 	nssHigh = nrf24nssHigh;
 	nssLow = nrf24nssLow;
 	ceHigh = nrf24ceHigh;
@@ -55,12 +65,12 @@ void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*n
 	clearInterrupts();
 
 	//enable RX pipe 0 and 1, disable all other pipes
-	writeReg(EN_RXADDR, ERX_P0|ERX_P1);
+	writeReg(EN_RXADDR, ERX_P0);
 
-	//set RX pipe with of pipe 0 to 1 byte.
+	//set RX pipe width of pipe 0 to 1 byte.
 	writeReg(RX_PW_P0, 0x01);
 
-	//set RX pipe with of pipe 1 to 1 byte.
+	//set RX pipe width of pipe 1 to 1 byte.
 	writeReg(RX_PW_P1, 0x01);
 
 	flushRX();
@@ -240,7 +250,7 @@ void RXinterrupts(){
 
 //power down the device. SPI stays active.
 void powerDown(){
-	ceLow(spiHandle); //go to standby mode
+	ceLow(); //go to standby mode
 	uint8_t reg_config = readReg(CONFIG);
 
 	//clear power bit: bit 2 to 0
@@ -251,7 +261,7 @@ void powerDown(){
 
 //go to standby. SPI stays active. consumes more power, but can go to TX or RX quickly
 void powerUp(){
-	ceLow(spiHandle);
+	ceLow();
 
 	uint8_t reg_config = readReg(CONFIG);
 
@@ -264,7 +274,7 @@ void powerUp(){
 
 //device power up and start listening
 void powerUpTX(){
-	ceLow(spiHandle); //stay in standby mode, until there is data to send.
+	ceLow(); //stay in standby mode, until there is data to send.
 	uint8_t reg_config = readReg(CONFIG);
 
 	//flush TX buffer
@@ -285,7 +295,7 @@ void powerUpRX(){
 	flushRX();
 	writeReg(CONFIG, PRIM_RX|PWR_UP);
 	//put CE pin high ->  start listening
-	ceHigh(spiHandle);
+	ceHigh();
 }
 
 
@@ -293,19 +303,19 @@ void powerUpRX(){
 
 //flush the TX buffer
 void flushTX(){
-	nssLow(spiHandle);
+	nssLow();
 	uint8_t sendData = NRF_FLUSH_TX; //FLUSH_TX
 	HAL_SPI_Transmit(spiHandle, &sendData, 1, 100);
-	nssHigh(spiHandle);
+	nssHigh();
 
 }
 
 //flush the RX buffer
 void flushRX(){
-	nssLow(spiHandle);
+	nssLow();
 	uint8_t sendData = NRF_FLUSH_RX; //FLUSH_RX
 	HAL_SPI_Transmit(spiHandle, &sendData, 1, 100);
-	nssHigh(spiHandle);
+	nssHigh();
 }
 
 //send a byte. only used in TX mode
@@ -316,34 +326,34 @@ void flushRX(){
 void sendData(uint8_t data[], uint8_t length){
 	//TextOut("before sending\n");
 
-	ceLow(spiHandle);
+	ceLow();
 
 	flushTX();
 
-	nssLow(spiHandle);
+	nssLow();
 	uint8_t spi_command = NRF_W_TX_PAYLOAD; // W_TX_PAYLOAD
 	uint8_t spi_timeout = 100;
 	HAL_SPI_Transmit(spiHandle, &spi_command, 1, spi_timeout);
 
 
 	HAL_SPI_Transmit(spiHandle, data, length, spi_timeout);
-	nssHigh(spiHandle);
+	nssHigh();
 
 
 	//send over air
 
-	ceHigh(spiHandle);
+	ceHigh();
 }
 
 //read a byte from the buffer. only used in RX mode
 //Edit: the datasheet say it is used in RX mode. It doesn't say it is only(!) used in RX mode.
 //     Afaik, you also need to use it in TX mode when you want to read an ACK payload
 void readData(uint8_t* receiveBuffer, uint8_t length){
-	nssLow(spiHandle);
+	nssLow();
 	uint8_t command = NRF_R_RX_PAYLOAD;
 	HAL_SPI_Transmit(spiHandle, &command, 1, 100);
 	HAL_SPI_Receive(spiHandle, receiveBuffer, length, 100);
-	nssHigh(spiHandle);
+	nssHigh();
 }
 
 
@@ -353,14 +363,14 @@ int8_t readAllData(uint8_t* receiveBuffer, uint8_t max_length){
 	//while there is data in the RX FIFO, read byte per byte
 	uint8_t bytes_read = 0;
 	while((readReg(FIFO_STATUS) & RX_EMPTY) != 0) {
-		nssLow(spiHandle);
+		nssLow();
 
 		uint8_t command = NRF_R_RX_PAYLOAD; //R_RX_PAYLOAD
 		HAL_SPI_Transmit(spiHandle, &command, 1, 100);
 
 		HAL_SPI_Receive(spiHandle, receiveBuffer++, 1, 100);
 
-		nssHigh(spiHandle);
+		nssHigh();
 		bytes_read++;
 
 		if(bytes_read >= max_length)
@@ -390,7 +400,7 @@ int8_t writeACKpayload(uint8_t* payloadBytes, uint8_t payload_length) {
 	//See: https://shantamraj.wordpress.com/2014/11/30/auto-ack-completely-fixed/ (visited 13th March, 2018)
 
 	//you may want to call writeACKpayload() in the procedure which reads a packet
-	nssLow(spiHandle);
+	nssLow();
 
 	uint8_t spi_command = NRF_W_ACK_PAYLOAD;
 	//activate spi command
@@ -401,7 +411,7 @@ int8_t writeACKpayload(uint8_t* payloadBytes, uint8_t payload_length) {
 	if(HAL_SPI_Transmit(spiHandle, payloadBytes, payload_length, 100) != HAL_OK)
 		return -1; //HAL/SPI error
 
-	nssHigh(spiHandle);
+	nssHigh();
 
 	return 0; //success
 }
@@ -431,7 +441,7 @@ int8_t getAck(uint8_t* ack_payload) {
 	if(irqRead()){
 		//uint8_t succesful = 0;
 		uint8_t status_reg = readReg(STATUS);
-		ceLow(spiHandle);
+		ceLow();
 		if(status_reg & MAX_RT){
 			//maximum retransmissions reached without receiving an ACK
 			//we don't care about dropped packets, we could as well just not make this event cause an interrupt,
@@ -458,22 +468,23 @@ int8_t getAck(uint8_t* ack_payload) {
 		else if((status_reg & TX_DS) && !(status_reg & RX_DR)){
 			//packet transmitted, but we received no ack payload in return.
 			//either we aren't using auto-acknowledgements or the receiver sent back an empty ack (ack with no payload)
-			return -1;
+			return -2;
 		}
 		else {
 			//This case would be reached when RX_DR is high (indicating that we received a packet),
 			//but TX_DS is low (indicating that we didn't send anything successfully prior to this reception).
 			//That means: a packet was addressed to us, but we weren't waiting for it.
 			//This packet is not an ACK payload, but a regular packet.
-			return -1;
+			return -3;
 		}
 
 	} else {
 		//there was no interrupt yet
-		return -2;
+		return -4;
 	}
-	//TextOut("00"); //could be sent as an error. needs to be agreed on with the software communicating with the basestation
-	return 0; //no ack payload received
+
+	//never reached
+	return -5; //no ack payload received
 }
 
 

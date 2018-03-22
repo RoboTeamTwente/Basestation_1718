@@ -12,11 +12,13 @@
 
 
 #include "basestationNRF24.h"
+#include "stm32f3xx_hal.h"
 
-void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel, uint8_t address[5]){
+void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 
 	NRFinit(spiHandle24, nrf24nssHigh, nrf24nssLow, nrf24ceHigh, nrf24ceLow, nrf24irqRead );
 
+	//clearInterrupts(0xbadf00d, 0xf000);
 	//enable TX interrupts, disable RX interrupts
 	//TXinterrupts(spiHandle);
 
@@ -31,27 +33,38 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel, uint8_t addre
 	//set the frequency channel
 	setFreqChannel(freqChannel);
 
-	//is this overwritten again whenever we transmit?
+	//enable pipe(s)
+	//setDataPipes(ERX_P1 | ERX_P0);
 	setDataPipes(ERX_P0);
 
-	//set the RX buffer size to x bytes
-	setRXbufferSize(12);
+
+
 
 	//set the TX address of
-	setTXaddress(address);
+	//setTXaddress(address);
 
-	//set auto retransmit: disabled
-	writeReg( SETUP_RETR, 0x00);
+	//set auto retransmit on missing ACK: disabled
+	uint8_t arc=3; //auto-retransmit count
+	uint8_t ard=0; //auto-retransmit delay
+	writeReg(SETUP_RETR, (ard<<3)|(arc&0b111));
 
 	//enable dynamic packet length, ack payload, dynamic acks
-	writeReg( FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
+	writeReg(FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
+	//writeReg(FEATURE, EN_DPL | EN_DYN_ACK);
 
-	setLowSpeed(spiHandle);
+	//enable Auto Acknowledgment for Pipe x
+	//writeReg(EN_AA, ENAA_P0);
+	//writeReg(EN_AA, ENAA_P1);
 
-	//enableAutoRetransmitSlow(spiHandle);
+	//set the RX buffer size to x bytes
+	//setRXbufferSize(12);
+	//writeReg(DYNPD, DPL_P0); //enable dynamic packet length for data pipe x
+	//writeReg(DYNPD, DPL_P1); //enable dynamic packet length for data pipe x
+
+	setLowSpeed();
 
 	//go to TX mode and be ready to listen
-	powerUpTX(spiHandle);
+	powerUpTX();
 }
 
 
@@ -68,6 +81,7 @@ uint8_t sendPacket(uint8_t packet[12]){
 	//send ack data back to pc
 
 	uint8_t addressLong[5] = {0x12, 0x34, 0x56, 0x78, 0x90 + (packet[0] >> 4)};
+	//uint8_t addressLong[5] = {0, 0, 0, 0, 0x90 + (packet[0] >> 4)};
 
 	setTXaddress(addressLong);
 	sendData(packet, 12);
@@ -86,7 +100,6 @@ uint8_t sendPacket(uint8_t packet[12]){
 
 //put the nss pin corresponding to the SPI used high
 void nrf24nssHigh(){
-	//NSS / CSN : chip select
 	HAL_GPIO_WritePin(GPIOD, CSN_SPI3_Pin, GPIO_PIN_SET);
 }
 

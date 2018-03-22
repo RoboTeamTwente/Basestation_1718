@@ -21,7 +21,7 @@
 //set RX buffer size
 //set TX address + pipe 0 address
 //powerUpTX
-void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel, uint8_t address[5]);
+void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel);
 
 
 //sends a packet from the basestation to a robot
