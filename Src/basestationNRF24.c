@@ -18,7 +18,6 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 
 	NRFinit(spiHandle24, nrf24nssHigh, nrf24nssLow, nrf24ceHigh, nrf24ceLow, nrf24irqRead );
 
-	//clearInterrupts(0xbadf00d, 0xf000);
 	//enable TX interrupts, disable RX interrupts
 	//TXinterrupts(spiHandle);
 
@@ -26,7 +25,7 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 	uint8_t config_reg = readReg(CONFIG);
 	config_reg &= ~MASK_RX_DR;   //enable for RX_DR
 	config_reg &= ~MASK_TX_DS;  //enable for TX_DS
-	config_reg |= MASK_MAX_RT; //disable for MAX_RT
+	config_reg &= ~MASK_MAX_RT; //enable for MAX_RT
 	writeReg( CONFIG, config_reg);
 
 
@@ -38,21 +37,23 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 	//setDataPipes(ERX_P0);
 
 
+	//uint8_t addressLong[5] = {0b11010000, 0x12, 0x34, 0x56, 0x78};
+	//writeRegMulti(RX_ADDR_P0, addressLong, 5);
 
 
 	//set the TX address of
-	//setTXaddress(address);
+	//setTXaddress(addressLong);
 
 	//set auto retransmit on missing ACK: disabled
-	uint8_t arc=3; //auto-retransmit count
-	uint8_t ard=1; //auto-retransmit delay
-	writeReg(SETUP_RETR, (ard<<3)|(arc&0b111));
+	uint8_t arc=0b1111; //auto-retransmit count
+	uint8_t ard=0b1111; //auto-retransmit delay
+	writeReg(SETUP_RETR, (ard<<4)|(arc&0b111));
 
 	//enable dynamic packet length, ack payload, dynamic acks
-	//writeReg(FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
+	writeReg(FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
 	//writeReg(FEATURE, EN_DPL | EN_DYN_ACK);
 	//writeReg(FEATURE, EN_DPL);
-	writeReg(FEATURE, readReg(FEATURE)|EN_DPL);
+	//writeReg(FEATURE, readReg(FEATURE)|EN_DPL);
 
 	//enable Auto Acknowledgment for Pipe x
 	//writeReg(EN_AA, ENAA_P0);
@@ -82,15 +83,22 @@ uint8_t sendPacket(uint8_t packet[12]){
 	//set CE low
 	//send ack data back to pc
 
-	uint8_t addressLong[5] = {0x12, 0x34, 0x56, 0x78, 0x90 + (packet[0] >> 4)};
+	/*
+	if((readReg(FIFO_STATUS) & TX_EMPTY) != 0) {
+		return 1;
+	}
+	*/
+	uint8_t addressLong[5] = {0b11010000 + (packet[0] >> 4), 0x12, 0x34, 0x56, 0x78};
 	//uint8_t addressLong[5] = {0, 0, 0, 0, 0x90 + (packet[0] >> 4)};
 
 	setTXaddress(addressLong);
+
 	sendData(packet, 12);
 
 
 	//returning last byte of address, but no call to this function ever appears to use the return value
-	return addressLong[4];
+	//return addressLong[4];
+	return 0;
 }
 
 

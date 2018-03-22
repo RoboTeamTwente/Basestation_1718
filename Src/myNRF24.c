@@ -449,6 +449,7 @@ int8_t getAck(uint8_t* ack_payload) {
 			//For now I will just reset the flag for this interrupt and go on
 			writeReg(STATUS, status_reg & MAX_RT);
 			flushTX();
+			ceHigh();
 			return -1;
 		}
 		else if(status_reg & TX_DS & RX_DR){
@@ -463,11 +464,14 @@ int8_t getAck(uint8_t* ack_payload) {
 
 			clearInterrupts();
 
+			ceHigh();
 			return 1; //success
 		}
 		else if((status_reg & TX_DS) && !(status_reg & RX_DR)){
 			//packet transmitted, but we received no ack payload in return.
 			//either we aren't using auto-acknowledgements or the receiver sent back an empty ack (ack with no payload)
+			writeReg(STATUS, TX_DS); //clear TX_DS flag
+			ceHigh();
 			return -2;
 		}
 		else {
@@ -475,15 +479,18 @@ int8_t getAck(uint8_t* ack_payload) {
 			//but TX_DS is low (indicating that we didn't send anything successfully prior to this reception).
 			//That means: a packet was addressed to us, but we weren't waiting for it.
 			//This packet is not an ACK payload, but a regular packet.
+			ceHigh();
 			return -3;
 		}
 
 	} else {
 		//there was no interrupt yet
+		ceHigh();
 		return -4;
 	}
 
 	//never reached
+	ceHigh();
 	return -5; //no ack payload received
 }
 

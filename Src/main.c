@@ -174,7 +174,8 @@ int main(void)
 			 */
 			// see page 54 and further for reset values
 			//writeReg(&hspi3, STATUS, 0x7E);
-			clearInterrupts();
+			//clearInterrupts();
+			flushTX();
 
 
 			/*
@@ -191,26 +192,44 @@ int main(void)
 			}
 			*/
 			createRobotPacket(id, 0, pktNum++, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
-			TextOut("Sending packet..\n");
-			sendPacket(madeUpPacket);
+			if(sendPacket(madeUpPacket) != 0) {
+				TextOut("TX FIFO not empty\n");
+			} else {
+				TextOut("Packet sent\n");
+			}
+			HAL_Delay(5);
 
-			/*
 			uint8_t ack_payload[12];
 			int8_t returncode = getAck(ack_payload);
 			if(returncode == 1) {
-				TextOut("Got ACK! :)\n");
+				TextOut("Got ACK! \\o/ ;D \n");
+
+				sprintf(smallStrBuffer, "ACK Payload Byte0: %i\n", ack_payload[0]);
+				TextOut(smallStrBuffer);
 			}
-			else {
-				TextOut("No ACK... :(\n");
+			else if (returncode == -2) {
+				TextOut("Got EMPTY ACK! >.>");
 				uint8_t status_reg = readReg(STATUS);
 				uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
 				uint8_t tx_ds_flag = ((status_reg & TX_DS) > 0);
 				uint8_t max_rt_flag = ((status_reg & MAX_RT) > 0);
 				uint8_t interrupt_up = irqRead();
-				sprintf(smallStrBuffer, "Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up);
+				uint8_t fifo = readReg(FIFO_STATUS);
+				sprintf(smallStrBuffer, "Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i, FIFO: 0x%02x\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up, fifo);
 				TextOut(smallStrBuffer);
 			}
-			*/
+			else {
+				TextOut("No ACK... :,(\n");
+				uint8_t status_reg = readReg(STATUS);
+				uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
+				uint8_t tx_ds_flag = ((status_reg & TX_DS) > 0);
+				uint8_t max_rt_flag = ((status_reg & MAX_RT) > 0);
+				uint8_t interrupt_up = irqRead();
+				uint8_t fifo = readReg(FIFO_STATUS);
+				sprintf(smallStrBuffer, "Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i, FIFO: 0x%02x\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up, fifo);
+				TextOut(smallStrBuffer);
+			}
+
 
 			TextOut("\n");
 			HAL_Delay(100);
