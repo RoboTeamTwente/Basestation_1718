@@ -45,20 +45,22 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 
 	//set auto retransmit on missing ACK: disabled
 	uint8_t arc=3; //auto-retransmit count
-	uint8_t ard=0; //auto-retransmit delay
+	uint8_t ard=1; //auto-retransmit delay
 	writeReg(SETUP_RETR, (ard<<3)|(arc&0b111));
 
 	//enable dynamic packet length, ack payload, dynamic acks
 	//writeReg(FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
 	//writeReg(FEATURE, EN_DPL | EN_DYN_ACK);
+	//writeReg(FEATURE, EN_DPL);
+	writeReg(FEATURE, readReg(FEATURE)|EN_DPL);
 
 	//enable Auto Acknowledgment for Pipe x
 	//writeReg(EN_AA, ENAA_P0);
 	//writeReg(EN_AA, ENAA_P1);
 
 	//set the RX buffer size to x bytes
-	setRXbufferSize(12);
-	//writeReg(DYNPD, DPL_P0); //enable dynamic packet length for data pipe x
+	//setRXbufferSize(12);
+	writeReg(DYNPD, DPL_P0); //enable dynamic packet length for data pipe x
 	//writeReg(DYNPD, DPL_P1); //enable dynamic packet length for data pipe x
 
 	setLowSpeed();

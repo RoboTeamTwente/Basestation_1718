@@ -190,7 +190,7 @@ int main(void)
 				toggleMe = 1;
 			}
 			*/
-			createRobotPacket(id, 0, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
+			createRobotPacket(id, 0, pktNum++, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
 			TextOut("Sending packet..\n");
 			sendPacket(madeUpPacket);
 
