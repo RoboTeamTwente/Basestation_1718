@@ -55,13 +55,7 @@ void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*n
 
 	//reset system
 
-	/*
-	 * I don't see a need for resetting all register values to their default values
-	 * when the system has just booted up. The datasheet already promises those values during boot-up.
-	 * A call to the softResetRegisters() function is only needed when we want to simulate a reboot of the nRF module
-	 * without actually turning it on and off.
-	 */
-	//softResetRegisters(spiHandle);
+	softResetRegisters();
 	clearInterrupts();
 
 	//enable RX pipe 0 and 1, disable all other pipes
@@ -441,7 +435,6 @@ int8_t getAck(uint8_t* ack_payload) {
 	if(irqRead()){
 		//uint8_t succesful = 0;
 		uint8_t status_reg = readReg(STATUS);
-		ceLow();
 		if(status_reg & MAX_RT){
 			//maximum retransmissions reached without receiving an ACK
 			//we don't care about dropped packets, we could as well just not make this event cause an interrupt,
@@ -449,10 +442,9 @@ int8_t getAck(uint8_t* ack_payload) {
 			//For now I will just reset the flag for this interrupt and go on
 			writeReg(STATUS, status_reg & MAX_RT);
 			flushTX();
-			ceHigh();
 			return -1;
 		}
-		else if(status_reg & TX_DS & RX_DR){
+		else if(status_reg & (TX_DS | RX_DR)){
 			//packet (successfully) transmitted
 			//an ACK with payload was received and put in the RX FIFO of the nRF module
 			//succesful = 1;
@@ -460,18 +452,18 @@ int8_t getAck(uint8_t* ack_payload) {
 			//read payload here!
 
 			 //TODO: I don't really like to set it to a fixed length here. I would rather like to read a global macro (#define PAYLOAD_LENGTH ?)
+			ceLow();
 			readData(ack_payload, 12);
+			ceHigh();
 
 			clearInterrupts();
-
-			ceHigh();
 			return 1; //success
 		}
 		else if((status_reg & TX_DS) && !(status_reg & RX_DR)){
 			//packet transmitted, but we received no ack payload in return.
 			//either we aren't using auto-acknowledgements or the receiver sent back an empty ack (ack with no payload)
+			//We also end up here when we used W_TX_PAYLOAD_NOACK, but this feature is not implemented yet.
 			writeReg(STATUS, TX_DS); //clear TX_DS flag
-			ceHigh();
 			return -2;
 		}
 		else {
@@ -479,18 +471,15 @@ int8_t getAck(uint8_t* ack_payload) {
 			//but TX_DS is low (indicating that we didn't send anything successfully prior to this reception).
 			//That means: a packet was addressed to us, but we weren't waiting for it.
 			//This packet is not an ACK payload, but a regular packet.
-			ceHigh();
 			return -3;
 		}
 
 	} else {
 		//there was no interrupt yet
-		ceHigh();
 		return -4;
 	}
 
 	//never reached
-	ceHigh();
 	return -5; //no ack payload received
 }
 

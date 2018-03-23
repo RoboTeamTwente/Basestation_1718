@@ -158,40 +158,11 @@ int main(void)
 		button6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
 		button5 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
 		button4 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11);
-		//never used: buttom3 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_13);
-		//never used: buttom2 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_15);
 		blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin); //button state of the blue user button of the Discovery board
 
 		if(debug_transmit_repeatedly == 1) {
-
-			/*
-			 * Apparently we need to write to the STATUS register
-			 * to make the Basestation keep sending packets in the setting of
-			 * sending two different packets in an alternating manner.
-			 *
-			 * Next thing to find out is: which Bit(s) do we need to set in the STATUS register
-			 * in order to do that -- and why?
-			 */
-			// see page 54 and further for reset values
-			//writeReg(&hspi3, STATUS, 0x7E);
-			//clearInterrupts();
-			flushTX();
-
-
-			/*
-			pktNum++;
-
-			if(toggleMe){
-				//TextOut("Sending a packet to Robot 2.");
-				createRobotPacket(id, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
-				toggleMe = 0;
-			} else {
-				//TextOut("Sending a packet to Robot 3.");
-				createRobotPacket(id+1, pktNum, 0, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
-				toggleMe = 1;
-			}
-			*/
 			createRobotPacket(id, 0, pktNum++, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
+
 			if(sendPacket(madeUpPacket) != 0) {
 				TextOut("TX FIFO not empty\n");
 			} else {
@@ -208,31 +179,25 @@ int main(void)
 				TextOut(smallStrBuffer);
 			}
 			else if (returncode == -2) {
-				TextOut("Got EMPTY ACK! >.>");
-				uint8_t status_reg = readReg(STATUS);
-				uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
-				uint8_t tx_ds_flag = ((status_reg & TX_DS) > 0);
-				uint8_t max_rt_flag = ((status_reg & MAX_RT) > 0);
-				uint8_t interrupt_up = irqRead();
-				uint8_t fifo = readReg(FIFO_STATUS);
-				sprintf(smallStrBuffer, "Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i, FIFO: 0x%02x\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up, fifo);
-				TextOut(smallStrBuffer);
+				TextOut("Got EMPTY ACK! >.>\n");
 			}
 			else {
 				TextOut("No ACK... :,(\n");
-				uint8_t status_reg = readReg(STATUS);
-				uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
-				uint8_t tx_ds_flag = ((status_reg & TX_DS) > 0);
-				uint8_t max_rt_flag = ((status_reg & MAX_RT) > 0);
-				uint8_t interrupt_up = irqRead();
-				uint8_t fifo = readReg(FIFO_STATUS);
-				sprintf(smallStrBuffer, "Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i, FIFO: 0x%02x\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up, fifo);
-				TextOut(smallStrBuffer);
 			}
 
+			//some debug output
+			uint8_t status_reg = readReg(STATUS);
+			uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
+			uint8_t tx_ds_flag = ((status_reg & TX_DS) > 0);
+			uint8_t max_rt_flag = ((status_reg & MAX_RT) > 0);
+			uint8_t interrupt_up = irqRead();
+			uint8_t fifo = readReg(FIFO_STATUS);
+			sprintf(smallStrBuffer, "Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i, FIFO: 0x%02x\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up, fifo);
+			TextOut(smallStrBuffer);
 
-			TextOut("\n");
-			HAL_Delay(100);
+
+			TextOut("\n------------\n");
+			HAL_Delay(10);
 			fun(); //delay with a LED animation
 			continue; //skip to the next loop iteration
 		}
