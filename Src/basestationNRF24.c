@@ -72,8 +72,11 @@ uint8_t sendPacket(uint8_t packet[12]){
 		return 1;
 	}
 	*/
-	uint8_t addressLong[5] = {0b11010000 + (packet[0] >> 4), 0x12, 0x34, 0x56, 0x78};
+	uint8_t roboID = (packet[0] >> 4);
+
+	//uint8_t addressLong[5] = {0b11010000 + (packet[0] >> 4), 0x12, 0x34, 0x56, 0x78};
 	//uint8_t addressLong[5] = {0, 0, 0, 0, 0x90 + (packet[0] >> 4)};
+	uint8_t addressLong[5] = {0x99, 0xB0 + roboID, 0x34, 0x56, 0x99};
 
 
 	setTXaddress(addressLong);
