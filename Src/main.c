@@ -133,7 +133,21 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	HAL_Delay(500);
+
+	//apparently we need to wait about 20 seconds after connecting the bastation
+	//only then we would receive data without dropping anything.
+	//This only applies to some systems (Ubuntu Linux) but not all (works on Windows).
+
+	uint8_t useWarmup = 1;
+	for(uint8_t i=40; i>0; i--) {
+		//sprintf(smallStrBuffer, "Warming Up Serial Connection. Seconds left:  %i   ", i);
+		if(!useWarmup) break;
+		sprintf(smallStrBuffer, "%i  ", i);
+		TextOut(smallStrBuffer);
+		HAL_Delay(500);
+	}
+	TextOut("Starting Execution \n\n\n");
+
 
 	int id = 10;
 	int robot_vel = 0;
@@ -152,6 +166,7 @@ int main(void)
 
 	uint8_t pktNum = 0;
 	//uint8_t toggleMe = 1;
+	HAL_Delay(1000);
 
 	while (1)
 	{
@@ -168,23 +183,12 @@ int main(void)
 			} else {
 				TextOut("Packet sent\n");
 			}
-			HAL_Delay(5);
+			//HAL_Delay(5);
 
-			uint8_t ack_payload[12];
-			int8_t returncode = getAck(ack_payload);
-			if(returncode == 1) {
-				TextOut("Got ACK! \\o/ ;D \n");
-
-				sprintf(smallStrBuffer, "ACK Payload Byte0: %i\n", ack_payload[0]);
-				TextOut(smallStrBuffer);
+			while(!irqRead()) {
+				//wait patiently for an interrupt
+				HAL_GetTick(); //dummy command
 			}
-			else if (returncode == -2) {
-				TextOut("Got EMPTY ACK! >.>\n");
-			}
-			else {
-				TextOut("No ACK... :,(\n");
-			}
-
 			//some debug output
 			uint8_t status_reg = readReg(STATUS);
 			uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
@@ -192,13 +196,51 @@ int main(void)
 			uint8_t max_rt_flag = ((status_reg & MAX_RT) > 0);
 			uint8_t interrupt_up = irqRead();
 			uint8_t fifo = readReg(FIFO_STATUS);
-			sprintf(smallStrBuffer, "Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i, FIFO: 0x%02x\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up, fifo);
+			sprintf(smallStrBuffer, "__Before__ RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i, FIFO: 0x%02x, PktNum: %i\n", rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up, fifo, pktNum);
+			TextOut(smallStrBuffer);
+
+
+			uint8_t ack_payload[32];
+			uint8_t payload_length;
+			int8_t returncode = getAck(ack_payload, &payload_length);
+
+			if(returncode == 1) {
+				TextOut("Got ACK! \\o/ ;D \n");
+
+				sprintf(smallStrBuffer, "ACK Payload (HEX): ");
+				TextOut(smallStrBuffer);
+				for(uint8_t i=0; i<payload_length; i++) {
+					sprintf(smallStrBuffer, "%x ", ack_payload[i]);
+					TextOut(smallStrBuffer);
+				}
+			}
+			else if (returncode == 0) {
+				TextOut("Got EMPTY ACK! >.>\n");
+			}
+			else if (returncode == -1) {
+				TextOut("Be patient... Let's wait for an interrupt.\n");
+			}
+			else if (returncode == -2) {
+				TextOut("Oh boy.. no ACK! :,(\n");
+			}
+
+			//some debug output
+			status_reg = readReg(STATUS);
+			rx_dr_flag = ((status_reg & RX_DR) > 0);
+			tx_ds_flag = ((status_reg & TX_DS) > 0);
+			max_rt_flag = ((status_reg & MAX_RT) > 0);
+			interrupt_up = irqRead();
+			fifo = readReg(FIFO_STATUS);
+
+
+			sprintf(smallStrBuffer, "\n__After__ Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i, FIFO: 0x%02x, pktNum: %i\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up, fifo, pktNum);
 			TextOut(smallStrBuffer);
 
 
 			TextOut("\n------------\n");
-			HAL_Delay(10);
-			fun(); //delay with a LED animation
+			HAL_Delay(1000);
+			//fun(); //delay with a LED animation
+			//HAL_SPIEx_FlushRxFifo(spiHandle);
 			continue; //skip to the next loop iteration
 		}
 		if(blue){
@@ -254,7 +296,8 @@ int main(void)
 		}
 
 		uint8_t ack_payload[12];
-		getAck(ack_payload);
+		uint8_t payload_length;
+		getAck(ack_payload,&payload_length);
 
 
   /* USER CODE END WHILE */

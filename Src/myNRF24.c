@@ -385,18 +385,48 @@ void enableAutoRetransmitSlow(){
 	writeReg(SETUP_RETR, arc&7);
 }
 
+//returns the payloadlength of a received packet when received
+//on a datapipe with DPL (Dynamic Payload Length)
+uint8_t getDynamicPayloadLength() {
+	uint8_t bytesReceived;
+
+	nssLow();
+	uint8_t command = NRF_R_RX_PL_WID; //read rx payload length
+	HAL_SPI_Transmit(spiHandle, &command, 1, 100);
+	HAL_SPI_Receive(spiHandle, &bytesReceived, 1, 100);
+	nssHigh();
+
+	return bytesReceived;
+}
+
+
+//returns the payload length of a received packet for data pipes
+//which don't use DPL (dynamic payload length)
+uint8_t getStaticPayloadLength(uint8_t dataPipeNo) {
+	if(dataPipeNo > 5)
+		return 0;
+	return readReg(RX_PW_P0 + dataPipeNo);
+}
+
 //write ACK payload to module
 //this payload will be included in the payload of ACK packets when automatic acknowledgments are activated
-int8_t writeACKpayload(uint8_t* payloadBytes, uint8_t payload_length) {
+int8_t writeACKpayload(uint8_t* payloadBytes, uint8_t payload_length, uint8_t pipeNo) {
 	//This function should be called as often as a packet was received (either before or after reception),
 	//because the module can only hold up to 3 ACK packets.
 	//It will use up one of the packets as a response when it receives a packet.
 	//See: https://shantamraj.wordpress.com/2014/11/30/auto-ack-completely-fixed/ (visited 13th March, 2018)
 
 	//you may want to call writeACKpayload() in the procedure which reads a packet
+
+
+	if(readReg(FIFO_STATUS) & FIFO_STATUS_TX_FULL) {
+		//flushTX(); //will ensure that we don't overflow with 3 ACK packets or more
+		return -1; //error: FIFO full
+	}
+
 	nssLow();
 
-	uint8_t spi_command = NRF_W_ACK_PAYLOAD;
+	uint8_t spi_command = NRF_W_ACK_PAYLOAD | pipeNo;
 	//activate spi command
 	if(HAL_SPI_Transmit(spiHandle, &spi_command,1, 100) != HAL_OK)
 		return -1; //HAL/SPI error
@@ -413,9 +443,15 @@ int8_t writeACKpayload(uint8_t* payloadBytes, uint8_t payload_length) {
 
 //called by the basestation to receive ack data
 //if there is data, it will be stored in the given ack_payload array
+//The amount of bytes will be stored in payload_length
 //returns 1 when there is a payload
-//on error, returns 0, -1 or -2.
-int8_t getAck(uint8_t* ack_payload) {
+//returns 0 when there is an ACK with no payload
+//on error, returns negative numbers
+//-1: no interrupt occurred
+//-2: maximum retransmission with no ACK
+//-3: received and discarded a non-ACK packet
+
+int8_t getAck(uint8_t* ack_payload, uint8_t* payload_length) {
 	/*
 	 * The following paragraph assumes that ACKs are enabled (e.g. we expect packets to be answered with ACKs).
 	 *
@@ -424,63 +460,88 @@ int8_t getAck(uint8_t* ack_payload) {
 	 * TX_DS and RX_DR are flags which would cause an interrupt on the IRQ pin,
 	 * when the CONFIG register is set up accordingly.
 	 *
-	 * With TXinterrupts(), the TX_DS flag and the MAX_RT flag is set, causing an interrupt
-	 * when a packet is sent and answered with an ACK.
-	 * The flag RX_DR is not set in this function, since we expect that TX_DS (successful transmission)
-	 * will be set before we receive an ACK.
-	 * Eventhough an ACK payload will not trigger an interrupt by itself, we should be able to
-	 * check the existence of an ACK payload by reading the RX_DR flag.
 	 *
 	 */
-	if(irqRead()){
-		//uint8_t succesful = 0;
-		uint8_t status_reg = readReg(STATUS);
-		if(status_reg & MAX_RT){
-			//maximum retransmissions reached without receiving an ACK
-			//we don't care about dropped packets, we could as well just not make this event cause an interrupt,
-			//but we might want to decide to retransmit packets in a later implementation.
-			//For now I will just reset the flag for this interrupt and go on
-			writeReg(STATUS, status_reg & MAX_RT);
-			flushTX();
-			return -1;
-		}
-		else if(status_reg & (TX_DS | RX_DR)){
-			//packet (successfully) transmitted
-			//an ACK with payload was received and put in the RX FIFO of the nRF module
-			//succesful = 1;
+	(*payload_length) = 0;
 
-			//read payload here!
+	if(!irqRead()){
+		return -1; //no interrupt occurred
+	}
 
-			 //TODO: I don't really like to set it to a fixed length here. I would rather like to read a global macro (#define PAYLOAD_LENGTH ?)
+	uint8_t status_reg = readReg(STATUS);
+	uint8_t max_rt = status_reg & MAX_RT; //maximum retransmission
+	uint8_t tx_ds = status_reg & TX_DS; //successfully transmitted
+	uint8_t rx_dr = status_reg & RX_DR; //payload received
+
+	if((status_reg & (MAX_RT | TX_DS | RX_DR)) == 0) {
+		//So, the interrupt pin was announcing an interrupt,
+		//but the status register doesn't flag any interrupt.
+		//We should not even end up here. It would mean that the nRF module misbehaves.
+		//We will treat this state as if no interrupt has happened.
+		return -1; //no interrupt flagged in the status register
+	}
+
+	if(max_rt){
+		//maximum retransmissions reached without receiving an ACK
+		//we don't care about dropped packets, we could as well just not make this event cause an interrupt,
+		//but we might want to decide to retransmit packets in a later implementation.
+		//For now I will just reset the flag for this interrupt and go on
+		writeReg(STATUS, MAX_RT);
+		flushTX();
+		return -2;
+	}
+
+
+	//if a packet was succesfully transmitted
+	if(tx_ds) {
+		if(rx_dr) {
+			//the packet was answered with an ACK with payload
+			(*payload_length) = getDynamicPayloadLength();
 			ceLow();
-			readData(ack_payload, 12);
+			readData(ack_payload, *payload_length);
 			ceHigh();
+
+			uint8_t fifo_status = readReg(FIFO_STATUS);
+			if(!(fifo_status & RX_EMPTY)) {
+				//if we read a payload and there is another packet in the FIFO,
+				//that probably means it is a glitch.
+				//Remember that the module sent out data to the address of one single robot
+				//and expects this robot to send an ACK on that address.
+				//So, any packet we receive here, can only come from that robot.
+				//Also we concluded that it is an ACK packet since TX_DS and RX_DR are high.
+				//The only conclusion that I can come up with is that we received more than one ACK packet
+				//for a single packet we sent.
+
+				flushRX(); //discard other (ACK) packets
+			}
 
 			clearInterrupts();
 			return 1; //success
-		}
-		else if((status_reg & TX_DS) && !(status_reg & RX_DR)){
-			//packet transmitted, but we received no ack payload in return.
-			//either we aren't using auto-acknowledgements or the receiver sent back an empty ack (ack with no payload)
-			//We also end up here when we used W_TX_PAYLOAD_NOACK, but this feature is not implemented yet.
+		} else {
+			//there was either an ACK with empty payload
+			//or we did not need to wait for an ACK (e.g. ACKs were disabled or we used NRF_W_TX_PAYLOAD_NO_ACK)
+
 			writeReg(STATUS, TX_DS); //clear TX_DS flag
-			return -2;
-		}
-		else {
-			//This case would be reached when RX_DR is high (indicating that we received a packet),
-			//but TX_DS is low (indicating that we didn't send anything successfully prior to this reception).
-			//That means: a packet was addressed to us, but we weren't waiting for it.
-			//This packet is not an ACK payload, but a regular packet.
-			return -3;
+			return 0; //empty ACK or no ACK received
 		}
 
-	} else {
-		//there was no interrupt yet
-		return -4;
+	}
+	else if(rx_dr) {
+		//This case would be reached when RX_DR is high (indicating that we received a packet),
+		//but TX_DS is low (indicating that we didn't send anything successfully prior to this reception).
+		//That means: a packet was addressed to us, but we weren't waiting for it.
+		//This packet is not an ACK payload, but a regular packet.
+
+		//discarding that packet
+		flushRX();
+		writeReg(STATUS, RX_DR);
+		return -3;
 	}
 
-	//never reached
-	return -5; //no ack payload received
+
+	//we basically handled all cases above,
+	//so this case would never be reached.
+	return -1;
 }
 
 
