@@ -27,7 +27,8 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 
 
 	setFreqChannel(freqChannel);
-	setLowSpeed();
+	//setLowSpeed();
+	//the default value of RF_SETUP sets the module to 2 Mbps
 
 
 
@@ -36,7 +37,7 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 
 	//auto-ack settings
 	uint8_t arc=0b1111; //auto-retransmit count
-	uint8_t ard=0b1111; //auto-retransmit delay
+	uint8_t ard=0b0001; //auto-retransmit delay
 	writeReg(SETUP_RETR, (ard<<4)|(arc&0b1111));
 
 	//enable dynamic packet length, ack payload, dynamic acks
