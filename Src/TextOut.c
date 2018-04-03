@@ -37,8 +37,8 @@ void TextOut(char *str){
 			return;
 	}
 	*/
-	while(CDC_Transmit_FS((uint8_t*)smallStrBuffer, length) == USBD_BUSY);
-	//CDC_Transmit_FS((uint8_t*)smallStrBuffer, length);
+	//while(CDC_Transmit_FS((uint8_t*)smallStrBuffer, length) == USBD_BUSY);
+	CDC_Transmit_FS((uint8_t*)smallStrBuffer, length);
 	HAL_Delay(1);
 
 	//clear buffer
