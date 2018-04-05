@@ -181,9 +181,52 @@ int main(void)
 		if(debug_transmit_repeatedly == 1) {
 			createRobotPacket(id, 0, pktNum++, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
 
-			TextOut("Sending packet..\n");
-			HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_RESET); //turn off LED4 (measure the voltage with scope for timing)
+			//HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_RESET); //turn off LED4 (measure the voltage with scope for timing)
 
+			//send 100 packets and check how many transmissions we needed
+			unsigned int retransmissionSum = 0;
+			uint16_t lostpackets = 0;
+			uint16_t packetsToTransmit = 1000;
+			uint8_t verbose = 1;
+			//TextOut("Sending packets..\n");
+			for(uint16_t i = 0; i<packetsToTransmit; i++) {
+				sendPacket(madeUpPacket);
+
+				uint8_t ack_payload[32];
+				uint8_t payload_length;
+				int8_t returncode;
+				do {
+					returncode = getAck(ack_payload, &payload_length);
+				} while(returncode == -1);
+				uint8_t retr = readReg(OBSERVE_TX)&0x0f;
+
+				if(returncode == -2) {
+					lostpackets++;
+					sprintf(smallStrBuffer, "%i. Packet lost.\n", (i+1));
+					TextOut(smallStrBuffer);
+
+				} else if(returncode == 1) {
+					if(verbose) {
+						sprintf(smallStrBuffer, "%i. Packet delivered with %i retransmissions.\n", (i+1), retr);
+						TextOut(smallStrBuffer);
+					}
+					retransmissionSum += retr;
+				} else {
+					if(verbose) {
+						sprintf(smallStrBuffer, "%i. Packet. Return Code: %i\n", (i+1), returncode);
+						TextOut(smallStrBuffer);
+					}
+				}
+				clearInterrupts();
+				HAL_Delay(50);
+
+			}
+			uint8_t packetloss = (int)(lostpackets*100.0)/(packetsToTransmit*1.0);
+			sprintf(smallStrBuffer, "Packets TX'd: %i, delivered: %i with retransmissions: %u, packet loss: %i %%\n\n", packetsToTransmit, (packetsToTransmit-lostpackets), retransmissionSum, packetloss);
+			TextOut(smallStrBuffer);
+			//HAL_Delay(2000);
+
+			/*
 			if(sendPacket(madeUpPacket) != 0) {
 				TextOut("TX FIFO not empty\n");
 				//continue; //skipping to next loop iteration
@@ -196,7 +239,7 @@ int main(void)
 				//wait patiently for an interrupt
 				HAL_GetTick(); //dummy command
 			}
-			HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_SET); //turn on LED4.
+			//HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_SET); //turn on LED4.
 
 			//some debug output
 			uint8_t status_reg = readReg(STATUS);
@@ -250,6 +293,7 @@ int main(void)
 			HAL_Delay(10);
 			//fun(); //delay with a LED animation
 			//HAL_SPIEx_FlushRxFifo(spiHandle);
+			 * 			 */
 			continue; //skip to the next loop iteration
 		}
 		if(blue){
