@@ -11,10 +11,10 @@
 #ifndef MYNRF24BASIC_H_
 #define MYNRF24BASIC_H_
 
-#include "bitops.h"
-#include <inttypes.h>
-#include "spi.h"
-#include "myNRF24.h"
+#include "bitops.h"  //for setBit() and readBit() in myNRF24.c
+#include <inttypes.h> //for uint8_t and so on
+#include "spi.h" //for commands like HAL_SPI_TransmitReceive and the type SPI_HandleTypeDef
+//#include "myNRF24.h"
 
 //defining SPI Commands (datasheet, page 48)
 #define NRF_R_REGISTER 0x00 //000AAAAA, AAAAA= Register
@@ -174,7 +174,7 @@ enum FEATURE_FLAG {
 };
 
 
-SPI_HandleTypeDef* spiHandle;
+extern SPI_HandleTypeDef* spiHandle;
 
 /*
  * Below we have pointers to functions implementing the pin setters.
@@ -185,16 +185,16 @@ SPI_HandleTypeDef* spiHandle;
  * (but it still needs to declare it).
  */
 //put the nss pin corresponding to the SPI used high
-void (*nssHigh)();
+extern void (*nssHigh)();
 //put the nss pin corresponding to the SPI used low
-void (*nssLow)();
+extern void (*nssLow)();
 //put the ce pin corresponding to the SPI used high
-void (*ceHigh)();
+extern void (*ceHigh)();
 //put the ce pin corresponding to the SPI used low
-void (*ceLow)();
+extern void (*ceLow)();
 
 //reading the irq pin state
-uint8_t (*irqRead)();
+extern uint8_t (*irqRead)();
 
 //read the interrupt pin
 //uint8_t irqRead(SPI_HandleTypeDef* spiHandle);

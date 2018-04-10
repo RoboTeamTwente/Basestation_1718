@@ -9,7 +9,7 @@
  */
 
 #include "discoveryboard.h"
-
+#include "gpio.h"
 
 //blink leds for debugging purposes
 void fun(){

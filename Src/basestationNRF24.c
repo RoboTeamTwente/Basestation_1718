@@ -12,46 +12,47 @@
 
 
 #include "basestationNRF24.h"
+#include "stm32f3xx_hal.h"
 
-void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel, uint8_t address[5]){
+void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 
 	NRFinit(spiHandle24, nrf24nssHigh, nrf24nssLow, nrf24ceHigh, nrf24ceLow, nrf24irqRead );
-
-	//enable TX interrupts, disable RX interrupts
-	//TXinterrupts(spiHandle);
 
 	//set interrupts
 	uint8_t config_reg = readReg(CONFIG);
 	config_reg &= ~MASK_RX_DR;   //enable for RX_DR
 	config_reg &= ~MASK_TX_DS;  //enable for TX_DS
-	config_reg |= MASK_MAX_RT; //disable for MAX_RT
-	writeReg( CONFIG, config_reg);
+	config_reg &= ~MASK_MAX_RT; //enable for MAX_RT
+	writeReg(CONFIG, config_reg);
 
 
-	//set the frequency channel
 	setFreqChannel(freqChannel);
+	//setLowSpeed();
+	//the default value of RF_SETUP sets the module to 2 Mbps
 
-	//is this overwritten again whenever we transmit?
-	setDataPipes(ERX_P0);
 
-	//set the RX buffer size to x bytes
-	setRXbufferSize(12);
 
-	//set the TX address of
-	setTXaddress(address);
+	//setting up ACKs (with payload)
+	setDataPipes(ERX_P0); //enable pipe(s). Pipe 0: ACK packets.
 
-	//set auto retransmit: disabled
-	writeReg( SETUP_RETR, 0x00);
+	//auto-ack settings
+	uint8_t arc=0; //auto-retransmit count
+	uint8_t ard=0b111; //auto-retransmit delay
+	writeReg(SETUP_RETR, (ard<<4)|(arc&0b1111));
 
 	//enable dynamic packet length, ack payload, dynamic acks
-	writeReg( FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
+	/*
+	 * EN_DYN_ACK enables to use the SPI command W_TX_PAYLOAD_NOACK.
+	 * That means: sending a packet which does not need to be answered with an ACK
+	 * when the module is otherwise configured to wait for ACKs.
+	 */
+	writeReg(FEATURE, EN_DPL | EN_ACK_PAY | EN_DYN_ACK);
 
-	setLowSpeed(spiHandle);
+	writeReg(DYNPD, DPL_P0); //enable dynamic packet length for data pipe x
 
-	//enableAutoRetransmitSlow(spiHandle);
 
 	//go to TX mode and be ready to listen
-	powerUpTX(spiHandle);
+	powerUpTX();
 }
 
 
@@ -67,14 +68,22 @@ uint8_t sendPacket(uint8_t packet[12]){
 	//set CE low
 	//send ack data back to pc
 
-	uint8_t addressLong[5] = {0x12, 0x34, 0x56, 0x78, 0x90 + (packet[0] >> 4)};
+	/*
+	if((readReg(FIFO_STATUS) & TX_EMPTY) != 0) {
+		return 1;
+	}
+	*/
+	uint8_t roboID = (packet[0] >> 4);
+
+	//uint8_t addressLong[5] = {0b11010000 + (packet[0] >> 4), 0x12, 0x34, 0x56, 0x78};
+	//uint8_t addressLong[5] = {0, 0, 0, 0, 0x90 + (packet[0] >> 4)};
+	uint8_t addressLong[5] = {0x99, 0xB0 + roboID, 0x34, 0x56, 0x99};
+
 
 	setTXaddress(addressLong);
+
 	sendData(packet, 12);
-
-
-	//returning last byte of address, but no call to this function ever appears to use the return value
-	return addressLong[4];
+	return 0;
 }
 
 
@@ -86,7 +95,6 @@ uint8_t sendPacket(uint8_t packet[12]){
 
 //put the nss pin corresponding to the SPI used high
 void nrf24nssHigh(){
-	//NSS / CSN : chip select
 	HAL_GPIO_WritePin(GPIOD, CSN_SPI3_Pin, GPIO_PIN_SET);
 }
 
