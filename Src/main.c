@@ -186,8 +186,10 @@ int main(void)
 			//send 100 packets and check how many transmissions we needed
 			unsigned int retransmissionSum = 0;
 			uint16_t lostpackets = 0;
-			uint16_t packetsToTransmit = 1000;
-			uint8_t verbose = 1;
+			uint16_t emptyack = 0;
+			uint16_t packetsToTransmit = 100;
+			uint8_t verbose = 0;
+			uint8_t interpacketdelay = 16; //delay in milliseconds between packets
 			//TextOut("Sending packets..\n");
 			for(uint16_t i = 0; i<packetsToTransmit; i++) {
 				sendPacket(madeUpPacket);
@@ -195,6 +197,7 @@ int main(void)
 				uint8_t ack_payload[32];
 				uint8_t payload_length;
 				int8_t returncode;
+
 				do {
 					returncode = getAck(ack_payload, &payload_length);
 				} while(returncode == -1);
@@ -202,8 +205,10 @@ int main(void)
 
 				if(returncode == -2) {
 					lostpackets++;
-					sprintf(smallStrBuffer, "%i. Packet lost.\n", (i+1));
-					TextOut(smallStrBuffer);
+					if(verbose) {
+						sprintf(smallStrBuffer, "%i. Packet lost.\n", (i+1));
+						TextOut(smallStrBuffer);
+					}
 
 				} else if(returncode == 1) {
 					if(verbose) {
@@ -211,18 +216,20 @@ int main(void)
 						TextOut(smallStrBuffer);
 					}
 					retransmissionSum += retr;
-				} else {
+				} else if(returncode == 0) {
+					emptyack++;
 					if(verbose) {
-						sprintf(smallStrBuffer, "%i. Packet. Return Code: %i\n", (i+1), returncode);
+						sprintf(smallStrBuffer, "%i. Packet delivered with empty ACK!\n", (i+1));
 						TextOut(smallStrBuffer);
 					}
 				}
 				clearInterrupts();
-				HAL_Delay(50);
+				HAL_Delay(interpacketdelay);
 
 			}
 			uint8_t packetloss = (int)(lostpackets*100.0)/(packetsToTransmit*1.0);
-			sprintf(smallStrBuffer, "Packets TX'd: %i, delivered: %i with retransmissions: %u, packet loss: %i %%\n\n", packetsToTransmit, (packetsToTransmit-lostpackets), retransmissionSum, packetloss);
+			uint8_t emptyackprocent = (int) (emptyack*100.0)/(packetsToTransmit*1.0);
+			sprintf(smallStrBuffer, "Packets TX'd: %i with a delay of %i ms, delivered: %i with retransmissions: %u, packet loss: %i %% (empty ack: %i %%) \n\n", packetsToTransmit, interpacketdelay,(packetsToTransmit-lostpackets), retransmissionSum, packetloss, emptyackprocent);
 			TextOut(smallStrBuffer);
 			//HAL_Delay(2000);
 

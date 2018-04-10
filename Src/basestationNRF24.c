@@ -36,8 +36,8 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 	setDataPipes(ERX_P0); //enable pipe(s). Pipe 0: ACK packets.
 
 	//auto-ack settings
-	uint8_t arc=0b1111; //auto-retransmit count
-	uint8_t ard=0b1; //auto-retransmit delay
+	uint8_t arc=0; //auto-retransmit count
+	uint8_t ard=0b111; //auto-retransmit delay
 	writeReg(SETUP_RETR, (ard<<4)|(arc&0b1111));
 
 	//enable dynamic packet length, ack payload, dynamic acks
