@@ -126,12 +126,13 @@ int main(void)
 	//the address will be overwritten as soon as we have decided to which robot we talk
 	//uint8_t address[5] = {0xBA, 0xAA, 0xAD, 0xF0, 0x0D};
 	initBase(&hspi3, 78);
+	/*
 	GPIO_PinState button6;
 	GPIO_PinState button5;
 	GPIO_PinState button4;
 
 	uint8_t remote = 0;
-
+	*/
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -153,6 +154,7 @@ int main(void)
 
 
 	int id = 10;
+	/*
 	int robot_vel = 0;
 	int ang = 0;
 	uint8_t rot_cclockwise = 0;
@@ -164,6 +166,7 @@ int main(void)
 	uint8_t dribble_cclockwise = 0;
 	uint8_t dribble_vel = 0xff;
 	uint8_t blue = 0;
+	*/
 
 	uint8_t debug_transmit_repeatedly = 1;
 
@@ -171,26 +174,51 @@ int main(void)
 	//uint8_t toggleMe = 1;
 	HAL_Delay(1000);
 
+
+
+
+
+
+
+
+	//new testing section
+	roboPacket txpacket;
+	uint16_t thesizeofthepacket = sizeof(txpacket);
+
+	while(1) {
+
+		sprintf(smallStrBuffer, "Txpacket is %i Bytes big.\n", thesizeofthepacket);
+		TextOut(smallStrBuffer);
+
+		HAL_Delay(1000);
+	}
+
+
+
+
+
+
+	/*
+	 * The code below is currently not in use
+	 */
+
 	while (1)
 	{
-		button6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
-		button5 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
-		button4 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11);
-		blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin); //button state of the blue user button of the Discovery board
+		//button6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
+		//button5 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
+		//button4 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11);
+		//blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin); //button state of the blue user button of the Discovery board
 
 		if(debug_transmit_repeatedly == 1) {
 			createRobotPacket(id, 0, pktNum++, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
 
-			//HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_RESET); //turn off LED4 (measure the voltage with scope for timing)
-
-			//send 100 packets and check how many transmissions we needed
 			unsigned int retransmissionSum = 0;
 			uint16_t lostpackets = 0;
 			uint16_t emptyack = 0;
 			uint16_t packetsToTransmit = 100;
 			uint8_t verbose = 0;
 			uint8_t interpacketdelay = 16; //delay in milliseconds between packets
-			//TextOut("Sending packets..\n");
+
 			for(uint16_t i = 0; i<packetsToTransmit; i++) {
 				sendPacket(madeUpPacket);
 
@@ -231,133 +259,18 @@ int main(void)
 			uint8_t emptyackprocent = (int) (emptyack*100.0)/(packetsToTransmit*1.0);
 			sprintf(smallStrBuffer, "Packets TX'd: %i with a delay of %i ms, delivered: %i with retransmissions: %u, packet loss: %i %% (empty ack: %i %%) \n\n", packetsToTransmit, interpacketdelay,(packetsToTransmit-lostpackets), retransmissionSum, packetloss, emptyackprocent);
 			TextOut(smallStrBuffer);
-			//HAL_Delay(2000);
-
-			/*
-			if(sendPacket(madeUpPacket) != 0) {
-				TextOut("TX FIFO not empty\n");
-				//continue; //skipping to next loop iteration
-			} else {
-				//TextOut("Packet sent\n");
-			}
-			//HAL_Delay(5);
-
-			while(!irqRead()) {
-				//wait patiently for an interrupt
-				HAL_GetTick(); //dummy command
-			}
-			//HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_SET); //turn on LED4.
-
-			//some debug output
-			uint8_t status_reg = readReg(STATUS);
-			uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
-			uint8_t tx_ds_flag = ((status_reg & TX_DS) > 0);
-			uint8_t max_rt_flag = ((status_reg & MAX_RT) > 0);
-			uint8_t interrupt_up = irqRead();
-			uint8_t fifo = readReg(FIFO_STATUS);
-			sprintf(smallStrBuffer, "__Before__ RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i, FIFO: 0x%02x, PktNum: %i\n", rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up, fifo, pktNum);
-			TextOut(smallStrBuffer);
-
-
-			uint8_t ack_payload[32];
-			uint8_t payload_length;
-			int8_t returncode = getAck(ack_payload, &payload_length);
-
-			if(returncode == 1) {
-				TextOut("Got ACK! \\o/ ;D \n");
-
-				sprintf(smallStrBuffer, "ACK Payload (HEX): ");
-				TextOut(smallStrBuffer);
-				for(uint8_t i=0; i<payload_length; i++) {
-					sprintf(smallStrBuffer, "%x ", ack_payload[i]);
-					TextOut(smallStrBuffer);
-				}
-			}
-			else if (returncode == 0) {
-				TextOut("Got EMPTY ACK! >.>\n");
-			}
-			else if (returncode == -1) {
-				TextOut("Be patient... Let's wait for an interrupt.\n");
-			}
-			else if (returncode == -2) {
-				TextOut("Oh boy.. no ACK! :,(\n");
-			}
-
-			//some debug output
-			status_reg = readReg(STATUS);
-			rx_dr_flag = ((status_reg & RX_DR) > 0);
-			tx_ds_flag = ((status_reg & TX_DS) > 0);
-			max_rt_flag = ((status_reg & MAX_RT) > 0);
-			interrupt_up = irqRead();
-			fifo = readReg(FIFO_STATUS);
-
-
-			sprintf(smallStrBuffer, "\n__After__ Return Code: %i, RX_DR: %i, TX_DS: %i, MAX_RT: %i, Interrupt: %i, FIFO: 0x%02x, pktNum: %i\n", returncode, rx_dr_flag, tx_ds_flag, max_rt_flag, interrupt_up, fifo, pktNum);
-			TextOut(smallStrBuffer);
-
-
-			TextOut("\n------------\n");
-			HAL_Delay(10);
-			//fun(); //delay with a LED animation
-			//HAL_SPIEx_FlushRxFifo(spiHandle);
-			 * 			 */
 			continue; //skip to the next loop iteration
 		}
-		if(blue){
-			//initBase(&hspi3, 0x2A, address);
-			//printAllRegisters(&hspi3);
-			HAL_Delay(100);
-			while(blue)
-				HAL_Delay(100);
-		}
-
-		if(!button6){
-			TextOut("forward");
-			remote = 1;
-			robot_vel = 1000;
-			ang = 0;
-			w_vel = 0;
-			createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
-		}
-		else if(!button5){
-			TextOut("button5");
-			remote = 1;
-			kick_force = 250;
-			chip = 0;
-			createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
-		}
-		else if(!button4){
-			TextOut("turning");
-			remote = 1;
-			robot_vel = 0;
-			w_vel = 360;
-			rot_cclockwise = 1;
-			createRobotPacket(id, robot_vel, ang, rot_cclockwise, w_vel, kick_force, do_kick, chip, forced, dribble_cclockwise, dribble_vel, madeUpPacket);
-
-		}
-
-		if(remote == 1){
-			sendPacket(madeUpPacket);
-			usbLength = 0;
-			HAL_Delay(10);
-		}
-
 
 		if(usbLength == 12){
-
 			sendPacket(usbData);
 			usbLength = 0;
 		}
 
 
-
 		if(usbLength != 0){
 			//fun();
 		}
-
-		uint8_t ack_payload[12];
-		uint8_t payload_length;
-		getAck(ack_payload,&payload_length);
 
 
   /* USER CODE END WHILE */
