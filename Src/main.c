@@ -117,7 +117,10 @@ int main(void)
 
 
 
-	fun2();
+	//fun2();
+  	//ensure that LED4 is on during start-up
+	HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_SET);
+
 	//TextOut("Initializing Basestation.\n");
 	//initializing address with a pseudo value ("BAD FOOD").
 	//the address will be overwritten as soon as we have decided to which robot we talk
@@ -134,11 +137,11 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-	//apparently we need to wait about 20 seconds after connecting the bastation
-	//only then we would receive data without dropping anything.
-	//This only applies to some systems (Ubuntu Linux) but not all (works on Windows).
+	//Apparently we need to wait about 20 seconds after connecting the bastation
+	//Only then we would receive data without dropping anything.
+	//This only applies to some systems (Ubuntu Linux) but not all (works on Windows without warm-up).
 
-	uint8_t useWarmup = 1;
+	uint8_t useWarmup = 0;
 	for(uint8_t i=40; i>0; i--) {
 		//sprintf(smallStrBuffer, "Warming Up Serial Connection. Seconds left:  %i   ", i);
 		if(!useWarmup) break;
@@ -178,10 +181,64 @@ int main(void)
 		if(debug_transmit_repeatedly == 1) {
 			createRobotPacket(id, 0, pktNum++, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
 
+			//HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_RESET); //turn off LED4 (measure the voltage with scope for timing)
+
+			//send 100 packets and check how many transmissions we needed
+			unsigned int retransmissionSum = 0;
+			uint16_t lostpackets = 0;
+			uint16_t emptyack = 0;
+			uint16_t packetsToTransmit = 100;
+			uint8_t verbose = 0;
+			uint8_t interpacketdelay = 16; //delay in milliseconds between packets
+			//TextOut("Sending packets..\n");
+			for(uint16_t i = 0; i<packetsToTransmit; i++) {
+				sendPacket(madeUpPacket);
+
+				uint8_t ack_payload[32];
+				uint8_t payload_length;
+				int8_t returncode;
+
+				do {
+					returncode = getAck(ack_payload, &payload_length);
+				} while(returncode == -1);
+				uint8_t retr = readReg(OBSERVE_TX)&0x0f;
+
+				if(returncode == -2) {
+					lostpackets++;
+					if(verbose) {
+						sprintf(smallStrBuffer, "%i. Packet lost.\n", (i+1));
+						TextOut(smallStrBuffer);
+					}
+
+				} else if(returncode == 1) {
+					if(verbose) {
+						sprintf(smallStrBuffer, "%i. Packet delivered with %i retransmissions.\n", (i+1), retr);
+						TextOut(smallStrBuffer);
+					}
+					retransmissionSum += retr;
+				} else if(returncode == 0) {
+					emptyack++;
+					if(verbose) {
+						sprintf(smallStrBuffer, "%i. Packet delivered with empty ACK!\n", (i+1));
+						TextOut(smallStrBuffer);
+					}
+				}
+				clearInterrupts();
+				HAL_Delay(interpacketdelay);
+
+			}
+			uint8_t packetloss = (int)(lostpackets*100.0)/(packetsToTransmit*1.0);
+			uint8_t emptyackprocent = (int) (emptyack*100.0)/(packetsToTransmit*1.0);
+			sprintf(smallStrBuffer, "Packets TX'd: %i with a delay of %i ms, delivered: %i with retransmissions: %u, packet loss: %i %% (empty ack: %i %%) \n\n", packetsToTransmit, interpacketdelay,(packetsToTransmit-lostpackets), retransmissionSum, packetloss, emptyackprocent);
+			TextOut(smallStrBuffer);
+			//HAL_Delay(2000);
+
+			/*
 			if(sendPacket(madeUpPacket) != 0) {
 				TextOut("TX FIFO not empty\n");
+				//continue; //skipping to next loop iteration
 			} else {
-				TextOut("Packet sent\n");
+				//TextOut("Packet sent\n");
 			}
 			//HAL_Delay(5);
 
@@ -189,6 +246,8 @@ int main(void)
 				//wait patiently for an interrupt
 				HAL_GetTick(); //dummy command
 			}
+			//HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_SET); //turn on LED4.
+
 			//some debug output
 			uint8_t status_reg = readReg(STATUS);
 			uint8_t rx_dr_flag = ((status_reg & RX_DR) > 0);
@@ -238,9 +297,10 @@ int main(void)
 
 
 			TextOut("\n------------\n");
-			HAL_Delay(1000);
+			HAL_Delay(10);
 			//fun(); //delay with a LED animation
 			//HAL_SPIEx_FlushRxFifo(spiHandle);
+			 * 			 */
 			continue; //skip to the next loop iteration
 		}
 		if(blue){

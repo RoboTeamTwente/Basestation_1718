@@ -30,6 +30,8 @@ void NRFinit(SPI_HandleTypeDef* spiHandle, void (*nrf24nssHigh)(), void (*nrf24n
 //reset to reset value on page 54
 void softResetRegisters();
 
+//how many retransmissions did it take for the last packet to be delivered?
+uint8_t getRetransmissionCount();
 
 //set the address you will send to
 int8_t setTXaddress(uint8_t address[5]);

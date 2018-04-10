@@ -109,7 +109,9 @@ void softResetRegisters(){
 
 }
 
-
+uint8_t getRetransmissionCount() {
+	return readReg(OBSERVE_TX)&0x0f;
+}
 
 //set own address note: only data pipe 0 is used in this implementation
 //returns 0 on success; -1 on error
