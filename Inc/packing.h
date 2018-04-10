@@ -15,7 +15,6 @@
 
 
 
-void createRobotPacket(int id, int robot_vel, int ang, uint8_t rot_cclockwise, int w_vel, uint8_t kick_force, uint8_t do_kick, uint8_t chip, uint8_t forced, uint8_t dribble_cclockwise, uint8_t dribble_vel, uint8_t* byteArr);
 
 
 /*
@@ -42,28 +41,34 @@ struct ackPacket {
 extern dataPacket dataStruct;
 */
 
-//13 Bytes
-typedef struct roboPacket{
-   uint8_t roboID:4;
-   int16_t xVel:11;
-   int16_t yVel:11;
-   uint8_t drivRef:1;
-   uint8_t camInfo:1;
-   int16_t angVel:9;
-   uint8_t debugInfo:1;
-   uint8_t kick:1;
-   uint8_t chip:1;
-   uint8_t kickChipImmediately:1;
-   uint8_t kickChipPower:8;
-   uint8_t refDribblerSpeed:8;
-   uint8_t genevaDriveState:3;
-   uint16_t xPosCam:13;
-   uint16_t yPosCam:13;
-   uint16_t orientationCam:11;
-} roboPacket;
+/*
+ * A data struct which is easy to work with
+ * when accessing variables.
+ * It needs to be converted before it can be
+ * transmitted, though.
+ */
 
-//between 11 and 23 Bytes
-typedef struct roboAckPacket{
+typedef struct roboData{
+   uint8_t id:5;
+   int16_t rho:11;
+   int16_t theta:11;
+   uint8_t driving_reference:1;
+   uint8_t use_cam_info:1;
+   int16_t velocity_angular:9;
+   uint8_t debug_info:1;
+   uint8_t do_kick:1;
+   uint8_t do_chip:1;
+   uint8_t kick_chip_forced:1;
+   uint8_t kick_chip_power:8;
+   uint8_t velocity_dribbler:8;
+   uint8_t geneva_drive_state:3;
+   uint16_t cam_position_x:13;
+   uint16_t cam_position_y:13;
+   uint16_t cam_rotation:11;
+} roboData;
+
+//between 11 and 23 Bytes, ideally
+typedef struct roboAckData{
 	//regular fields: 11 Bytes
 	uint8_t roboID:4;
 	uint8_t wheelLeftFront:1;
@@ -82,12 +87,15 @@ typedef struct roboAckPacket{
 	uint8_t ballSensor:8;
 
 	//extra fields (add 12 Bytes)
-	uint32_t xAcceleration;
-	uint32_t yAcceleration;
-	uint32_t angularRate;
+	float xAcceleration;
+	float yAcceleration;
+	float angularRate;
 
-} roboAckPacket;
+} roboAckData;
 
+
+void createRobotPacket(int id, int robot_vel, int ang, uint8_t rot_cclockwise, int w_vel, uint8_t kick_force, uint8_t do_kick, uint8_t chip, uint8_t forced, uint8_t dribble_cclockwise, uint8_t dribble_vel, uint8_t* byteArr);
+void robotDataToPacket(roboData input, uint8_t output[13]);
 
 
 #endif /* PACKING_H_ */

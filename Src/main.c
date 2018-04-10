@@ -182,12 +182,15 @@ int main(void)
 
 
 	//new testing section
-	roboPacket txpacket;
-	uint16_t thesizeofthepacket = sizeof(txpacket);
+	roboData myRoboData;
+	uint8_t myTxPacket[13];
+	robotDataToPacket(myRoboData, myTxPacket);
 
 	while(1) {
 
-		sprintf(smallStrBuffer, "Txpacket is %i Bytes big.\n", thesizeofthepacket);
+		sprintf(smallStrBuffer, "RoboData is %i Bytes big.\n", sizeof(myRoboData));
+		TextOut(smallStrBuffer);
+		sprintf(smallStrBuffer, "txPacket is %i Bytes big.\n", sizeof(myTxPacket));
 		TextOut(smallStrBuffer);
 
 		HAL_Delay(1000);
