@@ -121,7 +121,7 @@ void robotDataToPacket(roboData input, uint8_t output[13]) {
 
 /*
  * Create a roboData structure from a given Bytearray.
- * This is used by the robot to convert a received nRF packet into fields which make sense of that data.
+ * This is used by the robot to convert a received nRF packet into a struct with named variables.
  */
 void packetToRoboData(uint8_t input[13], roboData output) {
 	/*
@@ -159,8 +159,9 @@ void packetToRoboData(uint8_t input[13], roboData output) {
 	output.cam_position_x |= input[9]; //q
 	output.cam_position_y = input[10] << 5; //r
 	output.cam_position_y |= (input[11]>>3)&0b11111; //r
-	output.cam_rotation = (output[11]&0b111) << 8; //s
-	output.cam_rotation |= output[12]; //s
+	output.cam_rotation = (input[11]&0b111) << 8; //s
+	output.cam_rotation |= input[12]; //s
+
 }
 
 
@@ -261,7 +262,7 @@ void roboAckDataToPacket(roboAckData input, uint8_t output[23]) {
 
 	output[9]  = (uint8_t) (input.angularVelocity&0xff); //p
 
-	output[10]  = (uint8_t) input.ballSensor;
+	output[10]  = (uint8_t) input.ballSensor; //q
 
 /*
  * So, the following code is rather hacky.
@@ -291,7 +292,62 @@ void roboAckDataToPacket(roboAckData input, uint8_t output[23]) {
  */
     memcpy(&output[11], (void*)(&input.xAcceleration), 4); //r
     memcpy(&output[15], (void*)(&input.yAcceleration), 4); //s
-    memcpy(&output[19], (void*)(&input.yAcceleration), 4); //t
+    memcpy(&output[19], (void*)(&input.angularRate), 4); //t
 
+
+}
+
+/*
+ * We would actually just pass the raw ack packet to the computer and let the computer handle the unwrapping.
+ * But for completeness and for debug purposes it is nice to unwrap the ACK packet on the Basestation board
+ * itself. In that way we can test and debug with just the Basestation and a serial monitor.
+ *
+ * ACK packets can be either 11 Bytes or 23 Bytes long. That depends on whether the Basestation requested
+ * additional fields buy setting the debug_info flag in an earlier robo packet.
+ */
+void ackPacketToRoboAckData(uint8_t input[23], uint8_t packetlength, roboAckData output) {
+	//input is now specified as an array of size 23. Note that there are also ACK packets of the length 11.
+	//You need to use packetlength to know which range of the array contains useful information.
+	//The attempt of accessing input[11] to input[22] for a short ACK packet will yield garbage data.
+
+	output.roboID = input[0]>>4; //a
+	output.wheelLeftFront = (input[0]>>3)&1; //b
+	output.wheelRightFront = (input[0]>>2)&1; //c
+	output.wheelLeftBack = (input[0]>>1)&1; //d
+	output.wheelRightBack = input[0]&1; //e
+
+	output.batteryState = (input[1]>>7)&1; //f
+	output.genevaDriveState = (input[1]>>6)&1; //g
+	output.rotatingDirection = (input[1]>>5)&1;  //h
+	output.xPosRobot = (input[1]&0b11111)<<8; //i
+
+	output.xPosRobot |= input[2]; //i
+
+	output.yPosRobot = input[3]<<3; //j
+
+	output.yPosRobot |= input[4]>>3; //j
+	output.xVel = (input[4]&0b111)<<8; //k
+
+	output.xVel |= input[5]; //k
+
+	output.yVel = input[6]<<5; //m
+
+	output.yVel |= input[7]>>5; //m
+	output.orientation = (input[7]&0b11111)<<6; //n
+
+	output.orientation |= (input[8]>>2); //n
+	output.angularVelocity = (input[8]&0b11)<<8; //p
+
+	output.angularVelocity |= input[9]; //p
+
+	output.ballSensor = input[10]; //q
+
+	if(packetlength < 23)
+		return;
+
+	//converting 4 Bytes to 32 Bit floats. See documentation in roboAckDataToPacket().
+    memcpy((void*)(&output.xAcceleration), &input[11], 4); //r
+    memcpy((void*)(&output.yAcceleration), &input[15], 4); //s
+    memcpy((void*)(&output.angularRate), &input[19], 4); //t
 
 }
