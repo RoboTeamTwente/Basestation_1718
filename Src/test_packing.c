@@ -151,16 +151,142 @@ void testPacking() {
 }
 
 void testAckPacking() {
-	/*
-	roboAckData robInput;
-	roboAckData robOutput;
 
-	uint8_t roboAckPkt[32]; //larger than it needs to be..
-*/
+
 	while(1) {
+		roboAckData robInput;
+		roboAckData robOutput;
+
+		uint8_t roboAckPkt[23]; //larger than it needs to be..
 
 		//filling struct with pseudo-random data
-		//robInput.roboID = (uint8_t) HAL_GetTick()&0x0f;
+		robInput.roboID = (uint8_t) HAL_GetTick()&0x1f;
+		robInput.wheelLeftFront = (uint8_t) HAL_GetTick()&1;
+		robInput.wheelRightFront = (uint8_t) HAL_GetTick()&1;
+		robInput.wheelLeftBack = (uint8_t) HAL_GetTick()&1;
+		robInput.wheelRightBack = (uint8_t) HAL_GetTick()&1;
+		robInput.genevaDriveState = (uint8_t) HAL_GetTick()&1;
+		robInput.rotatingDirection = (uint8_t) HAL_GetTick()&1;
+		robInput.xPosRobot = (uint16_t) HAL_GetTick()&0x1FFF;
+		robInput.yPosRobot = (uint16_t) HAL_GetTick()&0x1FFF;
+		robInput.xVel = (int16_t) HAL_GetTick()&0x7FF;
+		robInput.yVel = (int16_t) HAL_GetTick()&0x7FF;
+		robInput.orientation = (int16_t) HAL_GetTick()&0x7FF;
+		robInput.angularVelocity = (uint16_t) HAL_GetTick()&0x3FF;
+		robInput.batteryState = (uint8_t) HAL_GetTick()&1;
+		robInput.ballSensor = (uint8_t) HAL_GetTick()&0x7f;
+		robInput.xAcceleration = HAL_GetTick();
+		robInput.yAcceleration = HAL_GetTick();
+		robInput.angularRate = HAL_GetTick();
+
+		//converting struct to packet
+		roboAckDataToPacket(&robInput, roboAckPkt);
+
+		//converting back to struct
+		ackPacketToRoboAckData(roboAckPkt, 23, &robOutput);
+
+		//comparing input with output
+		uint8_t mismatch = 0;
+		if(robInput.roboID != robOutput.roboID) {
+			sprintf(smallStrBuffer,"Mismatch in roboID. Input: %i, Output: %i\n", robInput.roboID, robOutput.roboID);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.wheelLeftFront != robOutput.wheelLeftFront) {
+			sprintf(smallStrBuffer,"Mismatch in wheelLeftFront. Input: %i, Output: %i\n", robInput.wheelLeftFront, robOutput.wheelLeftFront);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.wheelRightFront != robOutput.wheelRightFront) {
+			sprintf(smallStrBuffer,"Mismatch in wheelRightFront. Input: %i, Output: %i\n", robInput.wheelRightFront, robOutput.wheelRightFront);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.wheelLeftBack != robOutput.wheelLeftBack) {
+			sprintf(smallStrBuffer,"Mismatch in wheelLeftBack. Input: %i, Output: %i\n", robInput.wheelLeftBack, robOutput.wheelLeftBack);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.wheelRightBack != robOutput.wheelRightBack) {
+			sprintf(smallStrBuffer,"Mismatch in wheelRightBack. Input: %i, Output: %i\n", robInput.wheelRightBack, robOutput.wheelRightBack);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.genevaDriveState != robOutput.genevaDriveState) {
+			sprintf(smallStrBuffer,"Mismatch in genevaDriveState. Input: %i, Output: %i\n", robInput.genevaDriveState, robOutput.genevaDriveState);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.rotatingDirection != robOutput.rotatingDirection) {
+			sprintf(smallStrBuffer,"Mismatch in rotatingDirection. Input: %i, Output: %i\n", robInput.rotatingDirection, robOutput.rotatingDirection);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.xPosRobot != robOutput.xPosRobot) {
+			sprintf(smallStrBuffer,"Mismatch in xPosRobot. Input: %i, Output: %i\n", robInput.xPosRobot, robOutput.xPosRobot);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.yPosRobot != robOutput.yPosRobot) {
+			sprintf(smallStrBuffer,"Mismatch in yPosRobot. Input: %i, Output: %i\n", robInput.yPosRobot, robOutput.yPosRobot);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.xVel != robOutput.xVel) {
+			sprintf(smallStrBuffer,"Mismatch in xVel. Input: %i, Output: %i\n", robInput.xVel, robOutput.xVel);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.yVel != robOutput.yVel) {
+			sprintf(smallStrBuffer,"Mismatch in yVel. Input: %i, Output: %i\n", robInput.yVel, robOutput.yVel);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.orientation != robOutput.orientation) {
+			sprintf(smallStrBuffer,"Mismatch in orientation. Input: %i, Output: %i\n", robInput.orientation, robOutput.orientation);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.angularVelocity != robOutput.angularVelocity) {
+			sprintf(smallStrBuffer,"Mismatch in angularVelocity. Input: %i, Output: %i\n", robInput.angularVelocity, robOutput.angularVelocity);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.batteryState != robOutput.batteryState) {
+			sprintf(smallStrBuffer,"Mismatch in batteryState. Input: %i, Output: %i\n", robInput.batteryState, robOutput.batteryState);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.ballSensor != robOutput.ballSensor) {
+			sprintf(smallStrBuffer,"Mismatch in ballSensor. Input: %i, Output: %i\n", robInput.ballSensor, robOutput.ballSensor);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.xAcceleration != robOutput.xAcceleration) {
+			sprintf(smallStrBuffer,"Mismatch in xAcceleration. Input: %u, Output: %u\n", (unsigned int) robInput.xAcceleration, (unsigned int) robOutput.xAcceleration);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.yAcceleration != robOutput.yAcceleration) {
+			sprintf(smallStrBuffer,"Mismatch in yAcceleration. Input: %u, Output: %u\n", (unsigned int) robInput.yAcceleration, (unsigned int) robOutput.yAcceleration);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(robInput.angularRate != robOutput.angularRate) {
+			sprintf(smallStrBuffer,"Mismatch in angularRate. Input: %u, Output: %u\n", (unsigned int) robInput.angularRate, (unsigned int) robOutput.angularRate);
+			TextOut(smallStrBuffer);
+			mismatch = 1;
+		}
+		if(mismatch == 0) {
+			TextOut("Alright. Everything matches. :)");
+		}
+
+
+		TextOut("\n\n\n");
+
+		HAL_Delay(1000);
+
+
 	}
 }
 

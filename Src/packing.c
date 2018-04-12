@@ -298,8 +298,8 @@ void ackPacketToRoboAckData(uint8_t input[23], uint8_t packetlength, roboAckData
 		return;
 
 	//extra data
-	output->xAcceleration = (input[11]<<24) | (input[12]<<16) | (input[13]<<8) | input[14]; //r
-	output->yAcceleration = (input[15]<<24) | (input[16]<<16) | (input[17]<<8) | input[18]; //s
-	output->angularRate = (input[19]<<24) | (input[20]<<16) | (input[21]<<8) | input[22]; //t
+	output->xAcceleration = (input[11]<<24) | (input[12]<<16) | (input[13]<<8) | input[14]; //t
+	output->yAcceleration = (input[15]<<24) | (input[16]<<16) | (input[17]<<8) | input[18]; //u
+	output->angularRate = (input[19]<<24) | (input[20]<<16) | (input[21]<<8) | input[22]; //v
 
 }
