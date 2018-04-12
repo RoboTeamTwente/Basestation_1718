@@ -141,6 +141,16 @@ int main(void)
 
 
 
+	/*
+	 * debug code
+	 */
+	testAckPacking();
+
+
+	/*
+	 * code below is not used at the moment
+	 */
+
 	while (1)
 	{
 

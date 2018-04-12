@@ -198,29 +198,29 @@ void packetToRoboData(uint8_t input[13], roboData *output) {
  */
 
 void roboAckDataToPacket(roboAckData *input, uint8_t output[23]) {
-	output[0]  = (uint8_t) (input->roboID)<<3; //a
-	output[0] |= (uint8_t) (input->wheelLeftFront)<<2; //b
-	output[0] |= (uint8_t) (input->wheelRightFront)<<1; //c
-	output[0] |= (uint8_t) (input->wheelLeftBack); //d
+	output[0]  = (uint8_t) ((input->roboID)<<3); //a
+	output[0] |= (uint8_t) ((input->wheelLeftFront)<<2); //b
+	output[0] |= (uint8_t) ((input->wheelRightFront)<<1); //c
+	output[0] |= (uint8_t) ((input->wheelLeftBack)); //d
 
 
-	output[1] |= (uint8_t) (input->wheelRightBack)<<7; //e
-	output[1] |= (uint8_t) (input->genevaDriveState)<<6; //f
-	output[1] |= (uint8_t) (input->rotatingDirection)<<5; //g
-	output[1] |= (uint8_t) (input->xPosRobot>>8); //h
+	output[1]  = (uint8_t) ((input->wheelRightBack)<<7); //e
+	output[1] |= (uint8_t) ((input->genevaDriveState)<<6); //f
+	output[1] |= (uint8_t) ((input->rotatingDirection)<<5); //g
+	output[1] |= (uint8_t) ((input->xPosRobot>>8)); //h
 
 	output[2]  = (uint8_t) (input->xPosRobot&0xff); //h
 
-	output[3]  = (uint8_t) (input->yPosRobot>>5); //k
+	output[3]  = (uint8_t) (input->yPosRobot>>5)&0xff; //k
 
-	output[4]  = (uint8_t) (input->yPosRobot&0b11111)<<3; //k
+	output[4]  = (uint8_t) ((input->yPosRobot&0b11111)<<3); //k
 	output[4] |= (uint8_t) (input->xVel>>8)&0b111; //m
 
 	output[5]  = (uint8_t) (input->xVel&0xff); //m
 
-	output[6]  = (uint8_t) (input->yVel>>3); //o
+	output[6]  = (uint8_t) ((input->yVel>>3)&0xff); //o
 
-	output[7]  = (uint8_t) (input->yVel&0xff)<<5; //o
+	output[7]  = (uint8_t) ((input->yVel&0xff)<<5)&0b111; //o
 	output[7]  = (uint8_t) (input->orientation>>6)&0b11111; //p
 
 	output[8]  = (uint8_t) (input->orientation&0b111111)<<2; //p
@@ -228,7 +228,7 @@ void roboAckDataToPacket(roboAckData *input, uint8_t output[23]) {
 
 	output[9]  = (uint8_t) (input->angularVelocity&0xff); //q
 
-	output[10]  = (uint8_t) (input->batteryState >> 7);
+	output[10]  = (uint8_t) ((input->batteryState&1)<<7); //r
 
 	output[10]  = (uint8_t) (input->ballSensor)&0x7f; //s
 
@@ -274,22 +274,18 @@ void ackPacketToRoboAckData(uint8_t input[23], uint8_t packetlength, roboAckData
 
 	output->xPosRobot |= input[2]; //h
 
-	output->yPosRobot = input[3]<<3; //k
+	output->yPosRobot = ((input[3]<<3) | (input[4]>>3)); //k
 
-	output->yPosRobot |= input[4]>>3; //k
 	output->xVel = (input[4]&0b111)<<8; //m
 
 	output->xVel |= input[5]; //m
 
-	output->yVel = input[6]<<5; //o
+	output->yVel = (input[6]<<5) | (input[7]>>5); //o
 
-	output->yVel |= input[7]>>5; //o
-	output->orientation = (input[7]&0b11111)<<6; //p
+	output->orientation = ((input[7]&0b11111)<<6) | (input[8]>>2); //p
 
-	output->orientation |= (input[8]>>2); //p
-	output->angularVelocity = (input[8]&0b11)<<8; //q
+	output->angularVelocity = ((input[8]&0b11)<<8) | input[9]; //q
 
-	output->angularVelocity |= input[9]; //q
 
 	output->batteryState = (input[10]>>7)&1; //r
 	output->ballSensor = input[10]&0x7f; //s

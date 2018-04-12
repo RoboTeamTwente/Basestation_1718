@@ -289,9 +289,7 @@ void sendData(uint8_t data[], uint8_t length){
 	ceHigh();
 }
 
-//read a byte from the buffer. only used in RX mode
-//Edit: the datasheet say it is used in RX mode. It doesn't say it is only(!) used in RX mode.
-//     Afaik, you also need to use it in TX mode when you want to read an ACK payload
+//read received bytes from the rx buffer
 void readData(uint8_t* receiveBuffer, uint8_t length){
 	nssLow();
 	uint8_t command = NRF_R_RX_PAYLOAD;

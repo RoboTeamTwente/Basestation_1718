@@ -12,5 +12,6 @@
 #define TEST_PACKING_H_
 
 void testPacking();
+void testAckPacking();
 
 #endif /* TEST_PACKING_H_ */

@@ -167,8 +167,8 @@ void testAckPacking() {
 		robInput.wheelRightBack = (uint8_t) HAL_GetTick()&1;
 		robInput.genevaDriveState = (uint8_t) HAL_GetTick()&1;
 		robInput.rotatingDirection = (uint8_t) HAL_GetTick()&1;
-		robInput.xPosRobot = (uint16_t) HAL_GetTick()&0x1FFF;
-		robInput.yPosRobot = (uint16_t) HAL_GetTick()&0x1FFF;
+		robInput.xPosRobot = (int16_t) HAL_GetTick()&0x1FFF;
+		robInput.yPosRobot = (int16_t) HAL_GetTick()&0x1FFF;
 		robInput.xVel = (int16_t) HAL_GetTick()&0x7FF;
 		robInput.yVel = (int16_t) HAL_GetTick()&0x7FF;
 		robInput.orientation = (int16_t) HAL_GetTick()&0x7FF;
