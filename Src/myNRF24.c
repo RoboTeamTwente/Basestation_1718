@@ -54,18 +54,9 @@ void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*n
 	spiHandle = nrf24spiHandle;
 
 	//reset system
-
 	softResetRegisters();
 	clearInterrupts();
 
-	//enable RX pipe 0 and 1, disable all other pipes
-	writeReg(EN_RXADDR, ERX_P0);
-
-	//set RX pipe width of pipe 0 to 1 byte.
-	writeReg(RX_PW_P0, 0x01);
-
-	//set RX pipe width of pipe 1 to 1 byte.
-	writeReg(RX_PW_P1, 0x01);
 
 	flushRX();
 	flushTX();
@@ -159,14 +150,8 @@ int8_t enableDataPipe(uint8_t pipeNumber){
 }
 
 //disable a RX data pipe
-//note: pipe 0 is invalid, as it is used for acks
 int8_t disableDataPipe(uint8_t pipeNumber){
-	if(pipeNumber == 0){
-		//TextOut("Error, pipe 0 reserved for acks\n");
-		return -1; //error: invalid pipeNumber
-	}
-	else if(pipeNumber > 5){
-		//TextOut("Error, max pipe number = 5 \n");
+	if(pipeNumber > 5){
 		return -1; //error: invalid pipeNumber
 	}
 	uint8_t pipeEnableReg = readReg(EN_RXADDR);
@@ -186,7 +171,6 @@ void setDataPipes(uint8_t pipeEnable){
 //set the size of the RX buffer in bytes
 int8_t setRXbufferSize(uint8_t size){
 	if(size > 32){
-		//TextOut("Error: size can not be bigger than 32 bytes\n");
 		return -1; //error: size too big
 	}
 
@@ -205,42 +189,6 @@ int8_t setRXbufferSize(uint8_t size){
 	return 0; //success
 }
 
-//make sure interrupts for the TX functions are enabled
-//and those for the RX functions not
-void TXinterrupts(){
-	uint8_t config_reg = readReg(CONFIG);
-	/* Register 0x00 (CONFIG)
-	 * Bit 6: MASK_RX_DR
-	 * Bit 5: MASK_TX_DS
-	 * Bit 4: MASK_MAX_RT
-	 *
-	 * For those Bits:
-	 * 1 means: disabled; Interrupt not reflected on IRQ Pin
-	 * 0 means: enabled; Interrupt on IRQ Pin as active low
-	 *
-	 */
-	config_reg = setBit(config_reg, 6, 1); //disable for RX_DR
-	config_reg = setBit(config_reg, 5, 0); //enable for TX_DS
-	config_reg = setBit(config_reg, 4, 0); //enable for MAX_RT
-
-	//another way of writing that:
-	//config_reg |= MASK_RX_DR;   //1
-	//config_reg &= ~MASK_TX_DS;  //0
-	//config_reg &= ~MASK_MAX_RT; //0
-
-
-	writeReg(CONFIG, config_reg);
-}
-
-//make sure interrupts for the RX functions are enabled
-//and those for the TX functions not
-void RXinterrupts(){
-	uint8_t reg_config = readReg(CONFIG);
-	reg_config = setBit(reg_config, 6, 0);
-	reg_config = setBit(reg_config, 5, 1);
-	reg_config = setBit(reg_config, 4, 1);
-	writeReg(CONFIG, reg_config);
-}
 
 //---------------------------------modes----------------------------------//
 
