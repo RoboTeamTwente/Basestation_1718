@@ -59,6 +59,7 @@
 #include "packing.h"
 #include "discoveryboard.h"
 
+#include "test_packing.h"
 
 /* USER CODE END Includes */
 
@@ -176,150 +177,10 @@ int main(void)
 
 
 
-
-
-
-
-
-	//new testing section
-	/*
-	 * Test case:
-	 * create a roboData Struct
-	 * fill it with pseudo-random data
-	 * convert it to a packet
-	 * convert the packet back to roboData
-	 * compare the original roboData with the output.
-	 */
-	roboData robInput;
-	roboData robOutput;
-
-	uint8_t roboPkt[40]; //larger than it needs to be..
-
-
-	while(1) {
-
-		//filling struct with pseudo-random data
-		robInput.id = (uint8_t) HAL_GetTick()&0x1f;
-		robInput.rho = (uint16_t) HAL_GetTick()&0x7ff;
-		robInput.theta = (uint16_t) HAL_GetTick()&0x7ff;
-		robInput.driving_reference = (uint8_t) HAL_GetTick()&1;
-		robInput.use_cam_info = (uint8_t) HAL_GetTick()&1;
-		robInput.velocity_angular = (int16_t) HAL_GetTick()&0x1ff;
-		robInput.debug_info = (uint8_t) HAL_GetTick()&1;
-		robInput.do_kick = (uint8_t) HAL_GetTick()&1;
-		robInput.do_chip = (uint8_t) HAL_GetTick()&1;
-		robInput.kick_chip_forced = (uint8_t) HAL_GetTick()&1;
-		robInput.kick_chip_power = (uint8_t) HAL_GetTick()&0xff;
-		robInput.velocity_dribbler = (uint8_t) HAL_GetTick()&0xff;
-		robInput.geneva_drive_state = (uint8_t) HAL_GetTick()&7;
-		robInput.cam_position_x = (uint16_t) HAL_GetTick()&0x1fff;
-		robInput.cam_position_y = (uint16_t) HAL_GetTick()&0x1fff;
-		robInput.cam_rotation = (uint16_t) HAL_GetTick()&0x7ff;
-
-
-
-		//converting struct to packet
-		robotDataToPacket(&robInput, roboPkt);
-
-		//converting back to struct
-		packetToRoboData(roboPkt, &robOutput);
-
-		//comparing input with output
-
-		//hacky!! D:
-		if(strcmp(((const char*) &robInput), ((const char*) &robOutput)) == 0) {
-			//both are equal
-			TextOut("\nAlright! Input == Output.\n");
-		} else {
-			//something went wrong
-			TextOut("\nERROR!!!!! One or more fields have a mismatch!\n");
-
-			//printing Data
-			TextOut("Inputs were:\n");
-			sprintf(smallStrBuffer, "ID: %i\n", robInput.id);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "Rho: %i\n", robInput.rho);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "Theta: %i\n", robInput.theta);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "driving_reference: %i\n", robInput.driving_reference);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "use_cam_info: %i\n", robInput.use_cam_info);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "velocity_angular: %i\n", robInput.velocity_angular);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "debug_info: %i\n", robInput.debug_info);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "do_kick: %i\n", robInput.do_kick);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "do_chip: %i\n", robInput.do_chip);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "kick_chip_forced: %i\n", robInput.kick_chip_forced);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "kick_chip_power: %i\n", robInput.kick_chip_power);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "velocity_dribbler: %i\n", robInput.velocity_dribbler);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "geneva_drive_state: %i\n", robInput.geneva_drive_state);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "cam_position_x: %i\n", robInput.cam_position_x);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "cam_position_y: %i\n", robInput.cam_position_y);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "cam_rotation: %i\n", robInput.cam_rotation);
-			TextOut(smallStrBuffer);
-			TextOut("------------------------------------------------------------------------\n");
-			TextOut("Printing Outputs: \n");
-			sprintf(smallStrBuffer, "ID: %i\n", robOutput.id);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "Rho: %i\n", robOutput.rho);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "Theta: %i\n", robOutput.theta);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "driving_reference: %i\n", robOutput.driving_reference);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "use_cam_info: %i\n", robOutput.use_cam_info);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "velocity_angular: %i\n", robOutput.velocity_angular);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "debug_info: %i\n", robOutput.debug_info);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "do_kick: %i\n", robOutput.do_kick);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "do_chip: %i\n", robOutput.do_chip);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "kick_chip_forced: %i\n", robOutput.kick_chip_forced);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "kick_chip_power: %i\n", robOutput.kick_chip_power);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "velocity_dribbler: %i\n", robOutput.velocity_dribbler);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "geneva_drive_state: %i\n", robOutput.geneva_drive_state);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "cam_position_x: %i\n", robOutput.cam_position_x);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "cam_position_y: %i\n", robOutput.cam_position_y);
-			TextOut(smallStrBuffer);
-			sprintf(smallStrBuffer, "cam_rotation: %i\n", robOutput.cam_rotation);
-			TextOut(smallStrBuffer);
-		}
-
-		TextOut("\n\n\n");
-
-		HAL_Delay(1000);
-	}
-
-
-
-
-
-
-	/*
-	 * The code below is currently not in use
-	 */
-
 	while (1)
 	{
+		testPacking();
+		continue;
 		//button6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
 		//button5 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
 		//button4 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11);
