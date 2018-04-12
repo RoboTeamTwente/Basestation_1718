@@ -216,57 +216,59 @@ int main(void)
 		robInput.cam_position_y = (uint16_t) HAL_GetTick()&0x1fff;
 		robInput.cam_rotation = (uint16_t) HAL_GetTick()&0x7ff;
 
-		//printing Data
-		TextOut("New Inputs:\n");
-		sprintf(smallStrBuffer, "ID: %i\n", robInput.id);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "Rho: %i\n", robInput.rho);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "Theta: %i\n", robInput.theta);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "driving_reference: %i\n", robInput.driving_reference);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "use_cam_info: %i\n", robInput.use_cam_info);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "velocity_angular: %i\n", robInput.velocity_angular);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "debug_info: %i\n", robInput.debug_info);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "do_kick: %i\n", robInput.do_kick);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "do_chip: %i\n", robInput.do_chip);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "kick_chip_forced: %i\n", robInput.kick_chip_forced);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "kick_chip_power: %i\n", robInput.kick_chip_power);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "velocity_dribbler: %i\n", robInput.velocity_dribbler);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "geneva_drive_state: %i\n", robInput.geneva_drive_state);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "cam_position_x: %i\n", robInput.cam_position_x);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "cam_position_y: %i\n", robInput.cam_position_y);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "cam_rotation: %i\n", robInput.cam_rotation);
-		TextOut(smallStrBuffer);
 
 
 		//converting struct to packet
-		robotDataToPacket(robInput, roboPkt);
+		robotDataToPacket(&robInput, roboPkt);
 
 		//converting back to struct
-		packetToRoboData(roboPkt, robOutput);
+		packetToRoboData(roboPkt, &robOutput);
 
 		//comparing input with output
 
 		//hacky!! D:
 		if(strcmp(((const char*) &robInput), ((const char*) &robOutput)) == 0) {
 			//both are equal
-			TextOut("Alright! Input == Output.\n");
+			TextOut("\nAlright! Input == Output.\n");
 		} else {
 			//something went wrong
-			TextOut("ERROR!!!!! One or more fields have a mismatch!\n");
+			TextOut("\nERROR!!!!! One or more fields have a mismatch!\n");
+
+			//printing Data
+			TextOut("Inputs were:\n");
+			sprintf(smallStrBuffer, "ID: %i\n", robInput.id);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "Rho: %i\n", robInput.rho);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "Theta: %i\n", robInput.theta);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "driving_reference: %i\n", robInput.driving_reference);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "use_cam_info: %i\n", robInput.use_cam_info);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "velocity_angular: %i\n", robInput.velocity_angular);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "debug_info: %i\n", robInput.debug_info);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "do_kick: %i\n", robInput.do_kick);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "do_chip: %i\n", robInput.do_chip);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "kick_chip_forced: %i\n", robInput.kick_chip_forced);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "kick_chip_power: %i\n", robInput.kick_chip_power);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "velocity_dribbler: %i\n", robInput.velocity_dribbler);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "geneva_drive_state: %i\n", robInput.geneva_drive_state);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "cam_position_x: %i\n", robInput.cam_position_x);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "cam_position_y: %i\n", robInput.cam_position_y);
+			TextOut(smallStrBuffer);
+			sprintf(smallStrBuffer, "cam_rotation: %i\n", robInput.cam_rotation);
+			TextOut(smallStrBuffer);
+			TextOut("------------------------------------------------------------------------\n");
 			TextOut("Printing Outputs: \n");
 			sprintf(smallStrBuffer, "ID: %i\n", robOutput.id);
 			TextOut(smallStrBuffer);
@@ -302,7 +304,7 @@ int main(void)
 			TextOut(smallStrBuffer);
 		}
 
-		TextOut("\n");
+		TextOut("\n\n\n");
 
 		HAL_Delay(1000);
 	}

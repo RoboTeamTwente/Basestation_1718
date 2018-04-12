@@ -95,10 +95,10 @@ typedef struct roboAckData{
 
 
 void createRobotPacket(int id, int robot_vel, int ang, uint8_t rot_cclockwise, int w_vel, uint8_t kick_force, uint8_t do_kick, uint8_t chip, uint8_t forced, uint8_t dribble_cclockwise, uint8_t dribble_vel, uint8_t* byteArr);
-void robotDataToPacket(roboData input, uint8_t output[13]);
-void packetToRoboData(uint8_t input[13], roboData output);
-void roboAckDataToPacket(roboAckData input, uint8_t output[23]);
-void ackPacketToRoboAckData(uint8_t input[23], uint8_t packetlength, roboAckData output);
+void robotDataToPacket(roboData *input, uint8_t output[13]);
+void packetToRoboData(uint8_t input[13], roboData *output);
+void roboAckDataToPacket(roboAckData *input, uint8_t output[23]);
+void ackPacketToRoboAckData(uint8_t input[23], uint8_t packetlength, roboAckData *output);
 
 
 #endif /* PACKING_H_ */
