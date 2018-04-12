@@ -40,12 +40,11 @@ typedef struct roboData{
 //between 11 and 23 Bytes, ideally
 typedef struct roboAckData{
 	//regular fields: 11 Bytes
-	uint8_t roboID:4;
+	uint8_t roboID:5;
 	uint8_t wheelLeftFront:1;
 	uint8_t wheelRightFront:1;
 	uint8_t wheelLeftBack:1;
 	uint8_t wheelRightBack:1;
-	uint8_t batteryState:1;
 	uint8_t genevaDriveState:1;
 	uint8_t rotatingDirection:1;
 	int16_t xPosRobot:13;
@@ -54,12 +53,13 @@ typedef struct roboAckData{
 	int16_t yVel:11;
 	int16_t orientation:11;
 	uint16_t angularVelocity:10;
-	uint8_t ballSensor:8;
+	uint8_t batteryState:1;
+	uint8_t ballSensor:7;
 
 	//extra fields (add 12 Bytes)
-	float xAcceleration;
-	float yAcceleration;
-	float angularRate;
+	uint32_t xAcceleration;
+	uint32_t yAcceleration;
+	uint32_t angularRate;
 
 } roboAckData;
 

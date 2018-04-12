@@ -150,4 +150,17 @@ void testPacking() {
 	}
 }
 
+void testAckPacking() {
+	/*
+	roboAckData robInput;
+	roboAckData robOutput;
+
+	uint8_t roboAckPkt[32]; //larger than it needs to be..
+*/
+	while(1) {
+
+		//filling struct with pseudo-random data
+		//robInput.roboID = (uint8_t) HAL_GetTick()&0x0f;
+	}
+}
 
