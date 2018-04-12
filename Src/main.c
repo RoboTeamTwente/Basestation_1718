@@ -89,51 +89,34 @@ void SystemClock_Config(void);
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-	uint8_t madeUpPacket[12];
+	/* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
-  /* MCU Configuration----------------------------------------------------------*/
+	/* MCU Configuration----------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_SPI3_Init();
-  MX_USB_DEVICE_Init();
-  /* USER CODE BEGIN 2 */
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_SPI3_Init();
+	MX_USB_DEVICE_Init();
+	/* USER CODE BEGIN 2 */
 
-
-
-	//fun2();
-  	//ensure that LED4 is on during start-up
-	HAL_GPIO_WritePin(GPIOE, LD4_Pin, GPIO_PIN_SET);
-
-	//TextOut("Initializing Basestation.\n");
-	//initializing address with a pseudo value ("BAD FOOD").
-	//the address will be overwritten as soon as we have decided to which robot we talk
-	//uint8_t address[5] = {0xBA, 0xAA, 0xAD, 0xF0, 0x0D};
+	//Initializing the nRF module for wireless communication
 	initBase(&hspi3, 78);
-	/*
-	GPIO_PinState button6;
-	GPIO_PinState button5;
-	GPIO_PinState button4;
-
-	uint8_t remote = 0;
-	*/
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -144,9 +127,7 @@ int main(void)
 	//This only applies to some systems (Ubuntu Linux) but not all (works on Windows without warm-up).
 
 	uint8_t useWarmup = 0;
-	for(uint8_t i=40; i>0; i--) {
-		//sprintf(smallStrBuffer, "Warming Up Serial Connection. Seconds left:  %i   ", i);
-		if(!useWarmup) break;
+	for(uint8_t i=40; i>0 && useWarmup; i--) {
 		sprintf(smallStrBuffer, "%i  ", i);
 		TextOut(smallStrBuffer);
 		HAL_Delay(500);
@@ -154,40 +135,19 @@ int main(void)
 	TextOut("Starting Execution \n\n\n");
 
 
-	int id = 10;
-	/*
-	int robot_vel = 0;
-	int ang = 0;
-	uint8_t rot_cclockwise = 0;
-	int w_vel = 0; //w=omega velocity: rotational velocity.
-	uint8_t kick_force = 0;
-	uint8_t do_kick = 0;
-	uint8_t chip = 0;
-	uint8_t forced = 0;
-	uint8_t dribble_cclockwise = 0;
-	uint8_t dribble_vel = 0xff;
-	uint8_t blue = 0;
-	*/
-
 	uint8_t debug_transmit_repeatedly = 1;
 
-	uint8_t pktNum = 0;
-	//uint8_t toggleMe = 1;
 	HAL_Delay(1000);
 
 
 
 	while (1)
 	{
-		testPacking();
-		continue;
-		//button6 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
-		//button5 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
-		//button4 = HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_11);
-		//blue = HAL_GPIO_ReadPin(GPIOA, Blue_Pin); //button state of the blue user button of the Discovery board
 
 		if(debug_transmit_repeatedly == 1) {
-			createRobotPacket(id, 0, pktNum++, 0, 0, 0, 0, 0, 0, 0, 0, madeUpPacket);
+			roboData debugRoboData;
+			uint8_t debugRoboPacket[13];
+			robotDataToPacket(&debugRoboData, debugRoboPacket);
 
 			unsigned int retransmissionSum = 0;
 			uint16_t lostpackets = 0;
@@ -197,7 +157,7 @@ int main(void)
 			uint8_t interpacketdelay = 16; //delay in milliseconds between packets
 
 			for(uint16_t i = 0; i<packetsToTransmit; i++) {
-				sendPacket(madeUpPacket);
+				sendPacket(debugRoboPacket);
 
 				uint8_t ack_payload[32];
 				uint8_t payload_length;
@@ -239,7 +199,7 @@ int main(void)
 			continue; //skip to the next loop iteration
 		}
 
-		if(usbLength == 12){
+		if(usbLength == 13){
 			sendPacket(usbData);
 			usbLength = 0;
 		}

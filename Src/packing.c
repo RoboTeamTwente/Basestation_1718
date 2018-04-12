@@ -14,41 +14,6 @@
  * */
 
 
-void createRobotPacket(int id, int robot_vel, int ang, uint8_t rot_cclockwise, int w_vel, uint8_t kick_force, uint8_t do_kick, uint8_t chip, uint8_t forced, uint8_t dribble_cclockwise, uint8_t dribble_vel, uint8_t* byteArr){
-
-
-    // First nibble are the robot id
-    // Second nibble are the third nibble of robot velocity
-    byteArr[0] = (((id & 15) << 4) | ((robot_vel >> 9) & 15));
-    // First and second nibble of robot velocity
-    byteArr[1] = (robot_vel >> 1);
-    // Second to ninth bit of moving direction
-    byteArr[2] = (robot_vel & 1) << 7 | (ang >> 2);;
-
-    //sprintf(smallStrBuffer, "byteArr[2] hex: %x\n", byteArr[2]);
-    //TextOut(smallStrBuffer);
-
-    // First bit of moving direction
-    // Then bit that designates clockwise rotation or not
-    // Last three bits of angular velocity
-
-    byteArr[3] = ((ang & 3) << 6)
-                | (rot_cclockwise << 3)
-				| ((w_vel >> 8) & 7);
-    // First two nibbles of angular velocity
-    byteArr[4] = (w_vel);
-    // Just plug in the byte of kick-force
-    byteArr[5] = kick_force;
-    // gggg = 0, 0, chip = 1 kick = 0, forced = 1 normal = 0
-    // First the chip and forced bools, then a bool that designates
-    // a clockwise dribbler, and then three bits to designate dribble velocity
-    byteArr[6] = (do_kick << 6)
-                    | (chip << 5)
-                    | (forced << 4)
-                    | (dribble_cclockwise << 3)
-					| (dribble_vel & 7);
-}
-
 /*
  * Convert a struct with roboData to a Bytearray, which can be transmitted by the nRF module.
  * You will only use this function for creating packets for debugging purposes on the basestation.
