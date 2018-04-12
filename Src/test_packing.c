@@ -278,15 +278,6 @@ void testAckPacking() {
 			mismatch = 1;
 		}
 
-		sprintf(smallStrBuffer, "Byte No 3: 0x%x\n", roboAckPkt[3]);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "Byte No 4: 0x%x\n", roboAckPkt[4]);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "Byte No 6: 0x%x\n", roboAckPkt[6]);
-		TextOut(smallStrBuffer);
-		sprintf(smallStrBuffer, "Byte No 7: 0x%x\n", roboAckPkt[7]);
-		TextOut(smallStrBuffer);
-
 		if(mismatch == 0) {
 			TextOut("Alright. Everything matches. :)");
 		}
@@ -294,7 +285,7 @@ void testAckPacking() {
 
 		TextOut("\n\n\n");
 
-		HAL_Delay(1000);
+		HAL_Delay(100);
 
 
 	}
