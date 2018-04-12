@@ -207,7 +207,7 @@ void roboAckDataToPacket(roboAckData *input, uint8_t output[23]) {
 	output[1]  = (uint8_t) ((input->wheelRightBack)<<7); //e
 	output[1] |= (uint8_t) ((input->genevaDriveState)<<6); //f
 	output[1] |= (uint8_t) ((input->rotatingDirection)<<5); //g
-	output[1] |= (uint8_t) ((input->xPosRobot>>8)); //h
+	output[1] |= (uint8_t) ((input->xPosRobot>>8))&0b11111; //h
 
 	output[2]  = (uint8_t) (input->xPosRobot&0xff); //h
 
@@ -220,17 +220,17 @@ void roboAckDataToPacket(roboAckData *input, uint8_t output[23]) {
 
 	output[6]  = (uint8_t) ((input->yVel>>3)&0xff); //o
 
-	output[7]  = (uint8_t) ((input->yVel&0xff)<<5)&0b111; //o
-	output[7]  = (uint8_t) (input->orientation>>6)&0b11111; //p
+	output[7]   = (uint8_t) ((input->yVel&0xff)<<5); //o
+	output[7]  |= (uint8_t) (input->orientation>>6)&0b11111; //p
 
-	output[8]  = (uint8_t) (input->orientation&0b111111)<<2; //p
-	output[8]  = (uint8_t) (input->angularVelocity>>8)&0b11; //q
+	output[8]   = (uint8_t) (input->orientation&0b111111)<<2; //p
+	output[8]  |= (uint8_t) (input->angularVelocity>>8)&0b11; //q
 
 	output[9]  = (uint8_t) (input->angularVelocity&0xff); //q
 
 	output[10]  = (uint8_t) ((input->batteryState&1)<<7); //r
 
-	output[10]  = (uint8_t) (input->ballSensor)&0x7f; //s
+	output[10] |= (uint8_t) (input->ballSensor)&0x7f; //s
 
 	output[11] = (uint8_t) (input->xAcceleration >> 24)&0xff; //t
 	output[12] = (uint8_t) (input->xAcceleration >> 16)&0xff; //t
@@ -270,17 +270,15 @@ void ackPacketToRoboAckData(uint8_t input[23], uint8_t packetlength, roboAckData
 	output->wheelRightBack = (input[1]>>7)&1; //e
 	output->genevaDriveState = (input[1]>>6)&1; //f
 	output->rotatingDirection = (input[1]>>5)&1;  //g
-	output->xPosRobot = (input[1]&0b11111)<<8; //h
+	output->xPosRobot = ((input[1]&0b11111)<<8 | input[2]); //h
 
-	output->xPosRobot |= input[2]; //h
-
-	output->yPosRobot = ((input[3]<<3) | (input[4]>>3)); //k
+	output->yPosRobot = ((input[3]<<5) | (input[4]>>3)); //k
 
 	output->xVel = (input[4]&0b111)<<8; //m
 
 	output->xVel |= input[5]; //m
 
-	output->yVel = (input[6]<<5) | (input[7]>>5); //o
+	output->yVel = (input[6]<<3) | (input[7]>>5); //o
 
 	output->orientation = ((input[7]&0b11111)<<6) | (input[8]>>2); //p
 
