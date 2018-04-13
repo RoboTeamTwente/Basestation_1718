@@ -46,14 +46,13 @@ typedef struct roboAckData{
 	uint8_t wheelLeftBack:1;
 	uint8_t wheelRightBack:1;
 	uint8_t genevaDriveState:1;
-	uint8_t rotatingDirection:1;
+	uint8_t batteryState:1;
 	int16_t xPosRobot:13;
 	int16_t yPosRobot:13;
-	int16_t xVel:11;
-	int16_t yVel:11;
+	int16_t rho:11;
+	int16_t theta:11;
 	int16_t orientation:11;
-	uint16_t angularVelocity:10;
-	uint8_t batteryState:1;
+	int16_t angularVelocity:11;
 	uint8_t ballSensor:7;
 
 	//extra fields (add 12 Bytes)

@@ -36,6 +36,7 @@ void robotDataToPacket(roboData *input, uint8_t output[13]) {
 	);
 
 	output[3] = (uint8_t) (  							// cccde00g
+
 		(0b11100000 & (input->theta << 5)) |             // ccc00000 11 bits; bits  2-0 to 7-5
 		(0b00010000 & (input->driving_reference << 4)) | // 000d0000  1 bit ; bit     0 to   4
 		(0b00001000 & (input->use_cam_info) << 3) |      // 0000e000  1 bit ; bit     0 to   3
@@ -142,20 +143,19 @@ void packetToRoboData(uint8_t input[13], roboData *output) {
 		d           Left back wheel state       [0,1]           {true,false}          -              1    Indicates whether the left back wheel functions
 		e           Right back wheel state      [0,1]           {true,false}          -              1    Indicates whether the right back wheel functions
 		f           Geneva drive state          [0,1]           {true,false}          -              1    Indicates whether the Geneva drive functions
-		g           Rotating direction          [0,1]           {true,false}          -              1    True means clockwise, false means counterclockwise
+		g           Battery state               [0,1]           {true,false}          -              1    States whether the battery is nearing depletion
 		h           x position robot            [-4096,4095]    [-1024,1023]          0.25cm        13    -
 		k           y position robot            [-4096,4095]    [-1024,1023]          0.25cm        13    -
-		m           x velocity robot            [-1024,1023]    [-5120,5115]          2.5mm/s       11    See units: multiply value by 2.5 for the speed in mm/s
-		o           y velocity robot            [-1024,1023]    [-5120,5115]          2.5mm/s       11    See units: multiply value by 2.5 for the speed in mm/s
-		p           Orientation                 [-1024,1023]    [-pi,pi>              0.00307rad    11    2048 possible angles. Intervals of ~0.00307 rad
-		q           Angular velocity            [0,1023]        [0,8*2pi]             0.049rad/s    10    -
-		r           Battery state               [0,1]           {true,false}          -              1    States whether the battery is nearing depletion
+		m           rho            				[-1024,1023]    [?,?]		          	            11    Magnitude of the robot velocity vector
+		o           theta           			[-1024,1023]    [?,?]                               11    Angle of the robot velocity vector
+		p           Orientation                 [-1024,1023]    [-pi,pi>              0.00307rad    11    Angle of the facing direction. 2048 possible angles. Intervals of ~0.00307 rad
+		q           Angular velocity            [-1024,1023]    [?,?]                 0.049rad/s?   11
 		s           Ball sensor                 [0,128]         {?}			          -              7    Can be used to specify where on the dribbler the ball is located. For now a non-zero value represents the presence of the ball
 
 		Extra
-		t           Acceleration x              [0, a lot]    [0, 32 bit float]       m/s/s         32    -
-		u           Acceleration y              [0, a lot]    [0, 32 bit float]       m/s/s         32    -
-		v           Angular rate                [0, a lot]    [0, 32 bit float]       m/s/s         32    -
+		t           Acceleration x              [0, 4294967295]    [0, 32 bit float]       m/s/s         32    -
+		u           Acceleration y              [0, 4294967295]    [0, 32 bit float]       m/s/s         32    -
+		v           Angular rate                [0, 4294967295]    [0, 32 bit float]       m/s/s         32    raw angular velocity from xsense
 
 
 	===== Packet received from the robot =====
@@ -170,7 +170,7 @@ void packetToRoboData(uint8_t input[13], roboData *output) {
 		 7        oooppppp
 		 8        ppppppqq
 		 9        qqqqqqqq
-		10        rsssssss
+		10        qsssssss
 
 		Extra
 		11        tttttttt
@@ -206,7 +206,7 @@ void roboAckDataToPacket(roboAckData *input, uint8_t output[23]) {
 
 	output[1]  = (uint8_t) ((input->wheelRightBack)<<7); //e
 	output[1] |= (uint8_t) ((input->genevaDriveState)<<6); //f
-	output[1] |= (uint8_t) ((input->rotatingDirection)<<5); //g
+	output[1] |= (uint8_t) ((input->batteryState)<<5); //g
 	output[1] |= (uint8_t) ((input->xPosRobot>>8))&0b11111; //h
 
 	output[2]  = (uint8_t) (input->xPosRobot&0xff); //h
@@ -214,21 +214,21 @@ void roboAckDataToPacket(roboAckData *input, uint8_t output[23]) {
 	output[3]  = (uint8_t) (input->yPosRobot>>5)&0xff; //k
 
 	output[4]  = (uint8_t) ((input->yPosRobot&0b11111)<<3); //k
-	output[4] |= (uint8_t) (input->xVel>>8)&0b111; //m
+	output[4] |= (uint8_t) (input->rho>>8)&0b111; //m
 
-	output[5]  = (uint8_t) (input->xVel&0xff); //m
+	output[5]  = (uint8_t) (input->rho&0xff); //m
 
-	output[6]  = (uint8_t) ((input->yVel>>3)&0xff); //o
+	output[6]  = (uint8_t) ((input->theta>>3)&0xff); //o
 
-	output[7]   = (uint8_t) ((input->yVel&0xff)<<5); //o
+	output[7]   = (uint8_t) ((input->theta&0xff)<<5); //o
 	output[7]  |= (uint8_t) (input->orientation>>6)&0b11111; //p
 
 	output[8]   = (uint8_t) (input->orientation&0b111111)<<2; //p
-	output[8]  |= (uint8_t) (input->angularVelocity>>8)&0b11; //q
+	output[8]  |= (uint8_t) (input->angularVelocity>>9)&0b11; //q
 
-	output[9]  = (uint8_t) (input->angularVelocity&0xff); //q
+	output[9]  = (uint8_t) ((input->angularVelocity>>1)&0xff); //q
 
-	output[10]  = (uint8_t) ((input->batteryState&1)<<7); //r
+	output[10]  = (uint8_t) ((input->angularVelocity&1)<<7); //q
 
 	output[10] |= (uint8_t) (input->ballSensor)&0x7f; //s
 
@@ -269,23 +269,21 @@ void ackPacketToRoboAckData(uint8_t input[23], uint8_t packetlength, roboAckData
 
 	output->wheelRightBack = (input[1]>>7)&1; //e
 	output->genevaDriveState = (input[1]>>6)&1; //f
-	output->rotatingDirection = (input[1]>>5)&1;  //g
+	output->batteryState = (input[1]>>5)&1;  //g
 	output->xPosRobot = ((input[1]&0b11111)<<8 | input[2]); //h
 
 	output->yPosRobot = ((input[3]<<5) | (input[4]>>3)); //k
 
-	output->xVel = (input[4]&0b111)<<8; //m
+	output->rho = (input[4]&0b111)<<8; //m
 
-	output->xVel |= input[5]; //m
+	output->rho |= input[5]; //m
 
-	output->yVel = (input[6]<<3) | (input[7]>>5); //o
+	output->theta = (input[6]<<3) | (input[7]>>5); //o
 
 	output->orientation = ((input[7]&0b11111)<<6) | (input[8]>>2); //p
 
-	output->angularVelocity = ((input[8]&0b11)<<8) | input[9]; //q
+	output->angularVelocity = ((input[8]&0b11)<<9) | (input[9]<<1) | ((input[10]>>7)&1); //q
 
-
-	output->batteryState = (input[10]>>7)&1; //r
 	output->ballSensor = input[10]&0x7f; //s
 
 	if(packetlength < 23)
