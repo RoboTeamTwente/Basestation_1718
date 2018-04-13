@@ -56,24 +56,9 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 }
 
 
-uint8_t sendPacket(uint8_t packet[12]){
-	//---------------------------TX loop----------------------------//
-	//get data from pc
-	//read address -> test
-	//change TX address to address from packet -> test
-	//send data
-	//wait for interrupt
-	//note timeout and clear interrupt bit
-	//clear interrupt bits in case of succesful transmission
-	//set CE low
-	//send ack data back to pc
+uint8_t sendPacket(uint8_t packet[13]){
 
-	/*
-	if((readReg(FIFO_STATUS) & TX_EMPTY) != 0) {
-		return 1;
-	}
-	*/
-	uint8_t roboID = (packet[0] >> 4);
+	uint8_t roboID = (packet[0] >> 3);
 
 	//uint8_t addressLong[5] = {0b11010000 + (packet[0] >> 4), 0x12, 0x34, 0x56, 0x78};
 	//uint8_t addressLong[5] = {0, 0, 0, 0, 0x90 + (packet[0] >> 4)};
@@ -82,7 +67,7 @@ uint8_t sendPacket(uint8_t packet[12]){
 
 	setTXaddress(addressLong);
 
-	sendData(packet, 12);
+	sendData(packet, 13);
 	return 0;
 }
 
