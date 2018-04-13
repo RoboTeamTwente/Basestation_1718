@@ -59,6 +59,7 @@
 #include "packing.h"
 #include "discoveryboard.h"
 
+#include "packing.h"
 #include "test_packing.h"
 
 /* USER CODE END Includes */
@@ -146,15 +147,18 @@ int main(void)
 
 		if(debug_transmit_repeatedly == 1) {
 			roboData debugRoboData;
-			uint8_t debugRoboPacket[13];
+			roboAckData debugRoboAckData;
+			uint8_t debugRoboPacket[ROBOPKTLEN];
+
+			debugRoboData.id = 10; //robot 10
 			robotDataToPacket(&debugRoboData, debugRoboPacket);
 
 			unsigned int retransmissionSum = 0;
 			uint16_t lostpackets = 0;
 			uint16_t emptyack = 0;
 			uint16_t packetsToTransmit = 100;
-			uint8_t verbose = 0;
-			uint8_t interpacketdelay = 16; //delay in milliseconds between packets
+			uint8_t verbose = 1;
+			uint16_t interpacketdelay = 1000; //delay in milliseconds between packets
 
 			for(uint16_t i = 0; i<packetsToTransmit; i++) {
 				sendPacket(debugRoboPacket);
@@ -176,8 +180,14 @@ int main(void)
 					}
 
 				} else if(returncode == 1) {
+					if(payload_length >= SHORTACKPKTLEN)
+						ackPacketToRoboAckData(ack_payload, payload_length, &debugRoboAckData);
 					if(verbose) {
 						sprintf(smallStrBuffer, "%i. Packet delivered with %i retransmissions.\n", (i+1), retr);
+						TextOut(smallStrBuffer);
+						sprintf(smallStrBuffer, "Received payload length: %i\n", payload_length);
+						TextOut(smallStrBuffer);
+						sprintf(smallStrBuffer, "ACK Data: RoboID: %i\n", debugRoboAckData.roboID);
 						TextOut(smallStrBuffer);
 					}
 					retransmissionSum += retr;
@@ -199,7 +209,7 @@ int main(void)
 			continue; //skip to the next loop iteration
 		}
 
-		if(usbLength == 13){
+		if(usbLength == ROBOPKTLEN){
 			sendPacket(usbData);
 			usbLength = 0;
 		}

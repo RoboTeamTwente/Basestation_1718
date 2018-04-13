@@ -9,10 +9,9 @@
  */
 
 
-
-
 #include "basestationNRF24.h"
 #include "stm32f3xx_hal.h"
+#include "packing.h"
 
 void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 
@@ -56,7 +55,8 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 }
 
 
-uint8_t sendPacket(uint8_t packet[13]){
+uint8_t sendPacket(uint8_t packet[ROBOPKTLEN]){
+
 
 	uint8_t roboID = (packet[0] >> 3);
 
@@ -67,7 +67,7 @@ uint8_t sendPacket(uint8_t packet[13]){
 
 	setTXaddress(addressLong);
 
-	sendData(packet, 13);
+	sendData(packet, ROBOPKTLEN);
 	return 0;
 }
 
