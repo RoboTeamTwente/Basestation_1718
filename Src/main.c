@@ -146,10 +146,11 @@ int main(void)
 	{
 
 		if(debug_transmit_repeatedly == 1) {
-			roboData debugRoboData;
+			//roboData debugRoboData;
 			roboAckData debugRoboAckData;
 			uint8_t debugRoboPacket[ROBOPKTLEN];
 
+			/*
 			debugRoboData.id = 10; //robot 10
 			debugRoboData.rho = 1;
 			debugRoboData.theta = 2;
@@ -167,6 +168,26 @@ int main(void)
 			debugRoboData.cam_position_y = 2;
 			debugRoboData.cam_rotation = 3;
 			robotDataToPacket(&debugRoboData, debugRoboPacket);
+			*/
+			//let's overwrite that...
+
+			//debugRoboPacket[0] = 0x12;
+			debugRoboPacket[0] = (uint8_t)   							// aaaaabbb
+				(0b11111000 & (10 << 3));                  // aaaaa000   5 bits; bits  4-0 to 7-3
+
+			debugRoboPacket[1] = 0x60;
+			debugRoboPacket[2] = 0x70;
+			debugRoboPacket[3] = 0x80;
+			debugRoboPacket[4] = 0x90;
+			debugRoboPacket[5] = 0xA0;
+			debugRoboPacket[6] = 0xB0;
+			debugRoboPacket[7] = 0xC0;
+			debugRoboPacket[8] = 0x55;
+			debugRoboPacket[9] = 0x66;
+			debugRoboPacket[10] = 0x77;
+			debugRoboPacket[11] = 0x88;
+			debugRoboPacket[12] = 0x99;
+
 
 			unsigned int retransmissionSum = 0;
 			uint16_t lostpackets = 0;
