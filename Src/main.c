@@ -151,6 +151,21 @@ int main(void)
 			uint8_t debugRoboPacket[ROBOPKTLEN];
 
 			debugRoboData.id = 10; //robot 10
+			debugRoboData.rho = 1;
+			debugRoboData.theta = 2;
+			debugRoboData.driving_reference = 0;
+			debugRoboData.use_cam_info = 0;
+			debugRoboData.velocity_angular = 4;
+			debugRoboData.debug_info = 0;
+			debugRoboData.do_kick = 1;
+			debugRoboData.do_chip = 0;
+			debugRoboData.kick_chip_forced = 1;
+			debugRoboData.kick_chip_power = 0;
+			debugRoboData.velocity_dribbler = 15;
+			debugRoboData.geneva_drive_state = 3;
+			debugRoboData.cam_position_x = 1;
+			debugRoboData.cam_position_y = 2;
+			debugRoboData.cam_rotation = 3;
 			robotDataToPacket(&debugRoboData, debugRoboPacket);
 
 			unsigned int retransmissionSum = 0;
@@ -162,6 +177,7 @@ int main(void)
 
 			for(uint16_t i = 0; i<packetsToTransmit; i++) {
 				sendPacket(debugRoboPacket);
+				HAL_Delay(5);
 
 				uint8_t ack_payload[32];
 				uint8_t payload_length;
