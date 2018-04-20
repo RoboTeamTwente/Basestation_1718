@@ -224,8 +224,16 @@ int main(void)
 						TextOut(smallStrBuffer);
 						sprintf(smallStrBuffer, "Received payload length: %i\n", payload_length);
 						TextOut(smallStrBuffer);
-						sprintf(smallStrBuffer, "ACK Data: RoboID: %i\n", debugRoboAckData.roboID);
+						//sprintf(smallStrBuffer, "ACK Data: RoboID: %i\n", debugRoboAckData.roboID);
+						sprintf(smallStrBuffer, "ACK Data: ");
 						TextOut(smallStrBuffer);
+						for(uint8_t i=0; i < payload_length; i++) {
+							sprintf(smallStrBuffer, "%02x ", ack_payload[i]);
+							TextOut(smallStrBuffer);
+						}
+
+						//TextOut(smallStrBuffer);
+						TextOut("\n\n");
 					}
 					retransmissionSum += retr;
 				} else if(returncode == 0) {
