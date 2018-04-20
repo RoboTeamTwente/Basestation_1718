@@ -36,12 +36,11 @@ uint8_t (*irqRead)();
 
 //initialize the system:
 //reset it and enable pipe 1 and 0
-//set pipeWith to 1
+//set pipeWidth to 1
 //flush TX and RX buffer
 //arguments: SpiHandle and functions which implement pin setters for NSS and CE and reader for IRQ
-void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*nrf24nssLow)(), void (*nrf24ceHigh)(), void (*nrf24ceLow)(), uint8_t (*nrf24irqRead)() ){
+int8_t NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*nrf24nssLow)(), void (*nrf24ceHigh)(), void (*nrf24ceLow)(), uint8_t (*nrf24irqRead)() ){
 	//set references to pin setter functions
-
 	nssHigh = nrf24nssHigh;
 	nssLow = nrf24nssLow;
 	ceHigh = nrf24ceHigh;
@@ -53,7 +52,17 @@ void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*n
 	//global reference to spiHandle
 	spiHandle = nrf24spiHandle;
 
+	//reading the status register to check for errors with the SPI communication
+	uint8_t status_reg = getStatusReg(); //if the read fails, it will return -1
+	if(status_reg == -1) {
+		return -1; // SPI error! Is the module connected and is the SPI configured properly?
+	}
+
 	//reset system
+
+	//This sets all registers to their default values.
+	//This is needed to ensure consistent behaviour when the MCU is soft-resetted
+	//and the nRF module is not (e.g. after a firmware upload).
 	softResetRegisters();
 	clearInterrupts();
 
@@ -61,6 +70,7 @@ void NRFinit(SPI_HandleTypeDef* nrf24spiHandle, void (*nrf24nssHigh)(), void (*n
 	flushRX();
 	flushTX();
 
+	return 0; //init successful
 }
 
 //reset all register values to reset values on page 54, datasheet
@@ -100,8 +110,8 @@ void softResetRegisters(){
 
 }
 
-uint8_t getRetransmissionCount() {
-	return readReg(OBSERVE_TX)&0x0f;
+int8_t getStatusReg() {
+	return readReg(STATUS);
 }
 
 //set own address note: only data pipe 0 is used in this implementation
@@ -151,9 +161,9 @@ int8_t enableDataPipe(uint8_t pipeNumber){
 
 //disable a RX data pipe
 int8_t disableDataPipe(uint8_t pipeNumber){
-	if(pipeNumber > 5){
+	if(pipeNumber > 5)
 		return -1; //error: invalid pipeNumber
-	}
+
 	uint8_t pipeEnableReg = readReg(EN_RXADDR);
 	pipeEnableReg = setBit(pipeEnableReg, pipeNumber, 0);
 	writeReg(EN_RXADDR, pipeEnableReg);// disable pipe
@@ -347,6 +357,15 @@ uint8_t getDynamicPayloadLength() {
 	return bytesReceived;
 }
 
+//Transmit the SPI command "NOP" (No Operation) to the nRF module.
+//This command does not have any particular use.
+//Actually, as a side effect it would return the value of the STATUS register.. but I'm not saving the result.
+void nrfNOP() {
+	nssLow();
+	uint8_t command = NRF_NOP;
+	HAL_SPI_Transmit(spiHandle, &command, 1, 100);
+	nssHigh();
+}
 
 //returns the payload length of a received packet for data pipes
 //which don't use DPL (dynamic payload length)
@@ -355,7 +374,6 @@ uint8_t getStaticPayloadLength(uint8_t dataPipeNo) {
 		return 0;
 	return readReg(RX_PW_P0 + dataPipeNo);
 }
-
 //write ACK payload to module
 //this payload will be included in the payload of ACK packets when automatic acknowledgments are activated
 int8_t writeACKpayload(uint8_t* payloadBytes, uint8_t payload_length, uint8_t pipeNo) {
@@ -366,6 +384,8 @@ int8_t writeACKpayload(uint8_t* payloadBytes, uint8_t payload_length, uint8_t pi
 
 	//you may want to call writeACKpayload() in the procedure which reads a packet
 
+	if(pipeNo > 5)
+		return -1; //invalid pipe!
 
 	if(readReg(FIFO_STATUS) & FIFO_STATUS_TX_FULL) {
 		//flushTX(); //will ensure that we don't overflow with 3 ACK packets or more
@@ -408,6 +428,12 @@ int8_t getAck(uint8_t* ack_payload, uint8_t* payload_length) {
 	 * TX_DS and RX_DR are flags which would cause an interrupt on the IRQ pin,
 	 * when the CONFIG register is set up accordingly.
 	 *
+	 * With TXinterrupts(), the TX_DS flag and the MAX_RT flag is set, causing an interrupt
+	 * when a packet is sent and answered with an ACK.
+	 * The flag RX_DR is not set in this function, since we expect that TX_DS (successful transmission)
+	 * will be set before we receive an ACK.
+	 * Eventhough an ACK payload will not trigger an interrupt by itself, we should be able to
+	 * check the existence of an ACK payload by reading the RX_DR flag.
 	 *
 	 */
 	(*payload_length) = 0;

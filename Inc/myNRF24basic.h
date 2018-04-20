@@ -170,7 +170,7 @@ enum DYNPD_FLAG {
 enum FEATURE_FLAG {
 	EN_DPL = 1<<2,
 	EN_ACK_PAY = 1<<1,
-	EN_DYN_ACK = 1<<0,
+	EN_DYN_ACK = 1<<0, //enables the W_TX_PAYLOAD_NOACK SPI command
 };
 
 
@@ -213,7 +213,7 @@ int8_t writeRegMulti(uint8_t reg, uint8_t* pdata, uint8_t size);
 
 
 //read a register
-uint8_t readReg(uint8_t reg);
+int8_t readReg(uint8_t reg);
 
 //read a multi-byte register
 //output will be stored in the array dataBuffer

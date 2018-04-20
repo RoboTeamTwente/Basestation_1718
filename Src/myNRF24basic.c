@@ -53,7 +53,6 @@ int8_t writeReg(uint8_t reg, uint8_t data){
 		return -1; //HAL/SPI error
 
 	nssHigh();
-	//HAL_Delay(10);
 	return 0; //return with no error
 }
 
@@ -62,8 +61,7 @@ int8_t writeReg(uint8_t reg, uint8_t data){
 //returns 0 on success; -1 on error
 int8_t writeRegMulti(uint8_t reg, uint8_t* pdata, uint8_t size){
 	if(!(reg == RX_ADDR_P0 || reg == RX_ADDR_P1 || reg == TX_ADDR)){
-		//TextOut("Error, invalid register. It is either read only, single byte or non-existing.\n");
-		return -1;
+		return -1; //invalid register
 	}
 	else if(size > 5){
 		//TextOut("Error, size can never be bigger than 5\n");
@@ -71,22 +69,7 @@ int8_t writeRegMulti(uint8_t reg, uint8_t* pdata, uint8_t size){
 	}
 	//commands can only be given after a falling edge of the nss pin
 	//see figure 23 of datasheet
-	//nssLow(spiHandle);
 	nssLow();
-
-	/*
-	 * The following lines of code are totally useless from a logical point of view.
-	 * However, it appears that we need to do something like this to make the code run properly.
-	 * It does not make a lot of sense.
-	 * Challenge: try to change the code to produce the same logical result without breaking the code
-	 * (afterwards the basestation should still be sending packets which the top board is able to receive).
-	 */
-
-	for(uint8_t i=1; i<=1; i++) {
-		HAL_GetTick();
-	}
-
-
 
 	uint8_t cmd_w_register = reg | (1<<5); //the W_REGISTER command is the register number with an appended 1 at position 5.
 	uint8_t receiveData;
@@ -105,15 +88,15 @@ int8_t writeRegMulti(uint8_t reg, uint8_t* pdata, uint8_t size){
 		return -1; //SPI error
 
 	nssHigh();
-	//HAL_Delay(10);
 	return 0;
 }
 
 //read a register
-uint8_t readReg(uint8_t reg){
+//on error: (-1) on SPI problem. (-2) on invalid argument.
+//on success: returns the register value
+int8_t readReg(uint8_t reg){
 	if(reg > 0x1D){
-		//TextOut("Error, invalid register\n");
-		return 0xF0; //error
+		return -2; //error: invalid register
 	}
 
 	//commands can only be given after a falling edge of the nss pin
@@ -124,13 +107,13 @@ uint8_t readReg(uint8_t reg){
 	uint8_t receiveData;
 	//command: read from register reg
 	if(HAL_SPI_Transmit(spiHandle, &sendData, 1, 100) != HAL_OK)
-		return 0xF0; //error
+		return 0xff; //error: SPI problem
 
 	//read data from the register
-	HAL_SPI_Receive(spiHandle, &receiveData, 1, 100);
+	if(HAL_SPI_Receive(spiHandle, &receiveData, 1, 100) != HAL_OK)
+		return 0xff; //error: SPI problem
 
 	nssHigh();
-	//HAL_Delay(10);
 
 	return receiveData;
 }
@@ -157,9 +140,6 @@ int8_t readRegMulti(uint8_t reg, uint8_t* dataBuffer, uint8_t size){
 		return -1; //HAL/SPI error
 
 	nssHigh();
-
-	HAL_Delay(10);
-
 	return 0; //no error
 }
 

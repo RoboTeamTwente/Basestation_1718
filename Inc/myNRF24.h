@@ -10,9 +10,6 @@
 #ifndef MYNRF24_H_
 #define MYNRF24_H_
 
-//#include "gpio.h"
-//#include "stm32f3xx_hal.h"
-
 #include "spi.h"
 #include <inttypes.h>
 
@@ -25,10 +22,15 @@
 //reset it and enable pipe 1 and 0
 //set pipeWith to 1
 //flush TX and RX buffer
-void NRFinit(SPI_HandleTypeDef* spiHandle, void (*nrf24nssHigh)(), void (*nrf24nssLow)(), void (*nrf24ceHigh)(), void (*nrf24ceLow)(), uint8_t (*nrf24irqRead)() );
+//returns -1 on error; 0 on success.
+int8_t NRFinit(SPI_HandleTypeDef* spiHandle, void (*nrf24nssHigh)(), void (*nrf24nssLow)(), void (*nrf24ceHigh)(), void (*nrf24ceLow)(), uint8_t (*nrf24irqRead)() );
 
 //reset to reset value on page 54
 void softResetRegisters();
+
+//read the status register
+int8_t getStatusReg();
+
 
 //how many retransmissions did it take for the last packet to be delivered?
 uint8_t getRetransmissionCount();
@@ -104,10 +106,12 @@ void setLowSpeed();
 
 void enableAutoRetransmitSlow();
 
-
 //returns the payloadlength of a received packet when received
 //on a datapipe with DPL (Dynamic Payload Length)
 uint8_t getDynamicPayloadLength();
+
+//send SPI NOP command
+void nrfNOP();
 
 //returns the payload length of a received packet for data pipes
 //which don't use DPL (dynamic payload length)
