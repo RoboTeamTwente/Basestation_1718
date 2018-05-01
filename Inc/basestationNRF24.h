@@ -27,6 +27,8 @@ void initBase(SPI_HandleTypeDef* spiHandle, uint8_t freqChannel);
 //sends a packet from the basestation to a robot
 uint8_t sendPacket(uint8_t packet[12]);
 
+//wait until a packet comes in. then process it and send it to the PC
+uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot);
 
 
 /*

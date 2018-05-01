@@ -12,6 +12,7 @@
 #include "basestationNRF24.h"
 #include "stm32f3xx_hal.h"
 #include "packing.h"
+#include "TextOut.h"
 
 void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 
@@ -68,6 +69,54 @@ uint8_t sendPacket(uint8_t packet[ROBOPKTLEN]){
 	setTXaddress(addressLong);
 
 	sendData(packet, ROBOPKTLEN);
+	return 0;
+}
+
+
+	do {
+		returncode = getAck(ack_payload, &payload_length);
+	} while(returncode == -1); //-1 means: no interrupt yet (no received packet yet)
+
+	if(returncode == -2) {
+		//packet loss. Send a non-ack to the PC
+		//I'm not sure if this is the format we agreed on..
+		sprintf(smallStrBuffer, "%i\n", idOfLastCalledRobot);
+		TextOut(smallStrBuffer);
+
+
+
+
+	} else if(returncode == 1) {
+		//we got a regular ACK packet! Let's see..
+		//it it's the expected length, then unpack it to a struct
+		if(payload_length >= SHORTACKPKTLEN) {
+
+			ackPacketToRoboAckData(ack_payload, payload_length, &receivedRoboAck);
+
+			//writing ACK payload to PC by printing it as HEX values.
+			//Is that the right format?
+			for(uint8_t i=0; i < payload_length; i++) {
+				sprintf(smallStrBuffer, "%02x", ack_payload[i]);
+				TextOut(smallStrBuffer);
+			}
+		} else {
+			//if the packet wasn't the right length, then ignore it
+		}
+
+
+	} else if(returncode == 0) {
+		//delivered, but got an empty ack.
+		//send to the PC that there is no ackpayload.. so: send a non-ack.
+		sprintf(smallStrBuffer, "%i\n", idOfLastCalledRobot);
+		TextOut(smallStrBuffer);
+
+
+	} else if(returncode == -3) {
+		//received a regular (non-ack) packet.
+		//just ignore it and don't let the PC know.
+	}
+	clearInterrupts();
+
 	return 0;
 }
 
