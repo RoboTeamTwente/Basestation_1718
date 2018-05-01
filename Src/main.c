@@ -137,6 +137,10 @@ int main(void)
 
 		if(usbLength == ROBOPKTLEN){
 			sendPacket(usbData);
+
+			//we need to know to which Robot the PC wanted to send.
+			//we could convert the whole array to a RobotData struct,
+			//but for performance reasons we just use bitshifting, implying our packet format.
 			uint8_t robotToSendTo = usbData[0] >> 3;
 			getAndProcessAck(robotToSendTo);
 			usbLength = 0;
