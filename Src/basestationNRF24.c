@@ -72,6 +72,11 @@ uint8_t sendPacket(uint8_t packet[ROBOPKTLEN]){
 	return 0;
 }
 
+uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
+	uint8_t ack_payload[32];
+	uint8_t payload_length;
+	int8_t returncode = 0;
+	roboAckData receivedRoboAck;
 
 	do {
 		returncode = getAck(ack_payload, &payload_length);
