@@ -194,7 +194,7 @@ int main(void)
 			uint16_t emptyack = 0;
 			uint16_t packetsToTransmit = 100;
 			uint8_t verbose = 1;
-			uint16_t interpacketdelay = 1000; //delay in milliseconds between packets
+			uint16_t interpacketdelay = 10; //delay in milliseconds between packets
 
 			for(uint16_t i = 0; i<packetsToTransmit; i++) {
 				sendPacket(debugRoboPacket);
