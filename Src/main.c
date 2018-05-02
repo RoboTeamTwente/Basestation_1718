@@ -61,6 +61,7 @@
 
 #include "packing.h"
 #include "test_packing.h"
+#include "test_packetSending.h"
 
 /* USER CODE END Includes */
 
@@ -134,6 +135,7 @@ int main(void)
 
 	while (1)
 	{
+		sendPacketLoop(); //for testing. remove afterwards
 
 		if(usbLength == ROBOPKTLEN){
 			sendPacket(usbData);

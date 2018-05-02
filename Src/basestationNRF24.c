@@ -56,7 +56,7 @@ void initBase(SPI_HandleTypeDef* spiHandle24, uint8_t freqChannel){
 }
 
 
-uint8_t sendPacket(uint8_t packet[ROBOPKTLEN]){
+uint8_t sendPacket(uint8_t packet[ROBOPKTLEN+1]){
 
 
 	uint8_t roboID = (packet[0] >> 3);
@@ -65,10 +65,16 @@ uint8_t sendPacket(uint8_t packet[ROBOPKTLEN]){
 	//uint8_t addressLong[5] = {0, 0, 0, 0, 0x90 + (packet[0] >> 4)};
 	uint8_t addressLong[5] = {0x99, 0xB0 + roboID, 0x34, 0x56, 0x99};
 
+	uint8_t checksum=0;
+	for(uint8_t i=0; i<ROBOPKTLEN; i++) {
+		checksum ^= packet[i]; //checksum with XOR over all bytes
+	}
+
+	packet[ROBOPKTLEN] = checksum; //appending checksum
 
 	setTXaddress(addressLong);
 
-	sendData(packet, ROBOPKTLEN);
+	sendData(packet, ROBOPKTLEN+1);
 	return 0;
 }
 
