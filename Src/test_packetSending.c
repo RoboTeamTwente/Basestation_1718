@@ -12,36 +12,36 @@
 
 void sendPacketLoop() {
 	while(1) {
-		//roboData debugRoboData;
+		roboData debugRoboData;
 		roboAckData debugRoboAckData;
 		uint8_t debugRoboPacket[ROBOPKTLEN];
 
-		/*
+
 			debugRoboData.id = 10; //robot 10
 			debugRoboData.rho = 1;
 			debugRoboData.theta = 2;
 			debugRoboData.driving_reference = 0;
 			debugRoboData.use_cam_info = 0;
 			debugRoboData.velocity_angular = 4;
-			debugRoboData.debug_info = 0;
+			debugRoboData.debug_info = 1;
 			debugRoboData.do_kick = 1;
 			debugRoboData.do_chip = 0;
 			debugRoboData.kick_chip_forced = 1;
 			debugRoboData.kick_chip_power = 0;
 			debugRoboData.velocity_dribbler = 15;
 			debugRoboData.geneva_drive_state = 3;
-			debugRoboData.cam_position_x = 1;=
+			debugRoboData.cam_position_x = 1;
 			debugRoboData.cam_position_y = 2;
 			debugRoboData.cam_rotation = 3;
 			robotDataToPacket(&debugRoboData, debugRoboPacket);
-		 */
+
 		//let's overwrite that...
 
 		//debugRoboPacket[0] = 0x12;
-		debugRoboPacket[0] = (uint8_t)   							// aaaaabbb
-						(0b11111000 & (10 << 3));                  // aaaaa000   5 bits; bits  4-0 to 7-3
+		//debugRoboPacket[0] = (uint8_t)   							// aaaaabbb
+						//(0b11111000 & (10 << 3));                  // aaaaa000   5 bits; bits  4-0 to 7-3
 
-		debugRoboPacket[1] = 0x60;
+/*		debugRoboPacket[1] = 0x60;
 		debugRoboPacket[2] = 0x70;
 		debugRoboPacket[3] = 0x80;
 		debugRoboPacket[4] = 0x90;
@@ -52,7 +52,7 @@ void sendPacketLoop() {
 		debugRoboPacket[9] = 0x66;
 		debugRoboPacket[10] = 0x77;
 		debugRoboPacket[11] = 0x88;
-		debugRoboPacket[12] = 0x99;
+		debugRoboPacket[12] = 0x99;*/
 
 
 		unsigned int retransmissionSum = 0;
@@ -72,7 +72,7 @@ void sendPacketLoop() {
 
 			do {
 				returncode = getAck(ack_payload, &payload_length);
-				TextOut("No Interrupt yet\n");
+				//TextOut("No Interrupt yet\n");
 			} while(returncode == -1);
 			uint8_t retr = readReg(OBSERVE_TX)&0x0f;
 
@@ -98,6 +98,13 @@ void sendPacketLoop() {
 						sprintf(smallStrBuffer, "%02x ", ack_payload[i]);
 						TextOut(smallStrBuffer);
 					}
+					TextOut("\n");
+					sprintf(smallStrBuffer, "Robot ID: %i\n",debugRoboAckData.roboID);
+					TextOut(smallStrBuffer);
+					sprintf(smallStrBuffer, "xPos: %i\n",debugRoboAckData.xPosRobot);
+					TextOut(smallStrBuffer);
+					sprintf(smallStrBuffer, "BallSensor: %i\n",debugRoboAckData.ballSensor);
+					TextOut(smallStrBuffer);
 
 					//TextOut(smallStrBuffer);
 					TextOut("\n\n");

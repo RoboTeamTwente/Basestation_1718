@@ -46,7 +46,7 @@
 									<listOptionValue builtIn="false" value="__packed=&quot;__attribute__((__packed__))&quot;" />
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F303xC" />
-								</option>
+								<listOptionValue builtIn="false" value="__weak=__attribute__((weak))" /><listOptionValue builtIn="false" value="__packed=__attribute__((__packed__))" /></option>
 								<option id="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other.1217302315" superClass="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-fmessage-length=0" valueType="string" />
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1909539130" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c" />
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.1083796190" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s" />
@@ -68,7 +68,7 @@
 									<listOptionValue builtIn="false" value="__packed=&quot;__attribute__((__packed__))&quot;" />
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F303xC" />
-								</option>
+								<listOptionValue builtIn="false" value="__weak=__attribute__((weak))" /><listOptionValue builtIn="false" value="__packed=__attribute__((__packed__))" /></option>
 								<option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other.161083010" name="Other flags" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other" useByScannerDiscovery="false" value="-fmessage-length=0" valueType="string" />
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1880243084" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp" />
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s.977929870" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s" />
@@ -101,10 +101,10 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<sourceEntries><entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup" /><entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares" />
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers" />
+					<sourceEntries><entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares" /><entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers" />
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc" />
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src" />
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup" />
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -155,7 +155,7 @@
 									<listOptionValue builtIn="false" value="__packed=&quot;__attribute__((__packed__))&quot;" />
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F303xC" />
-								</option>
+								<listOptionValue builtIn="false" value="__weak=__attribute__((weak))" /><listOptionValue builtIn="false" value="__packed=__attribute__((__packed__))" /></option>
 								<option id="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other.1217302315" superClass="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-fmessage-length=0" valueType="string" />
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1909539130" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c" />
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.1083796190" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s" />
@@ -177,7 +177,7 @@
 									<listOptionValue builtIn="false" value="__packed=&quot;__attribute__((__packed__))&quot;" />
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F303xC" />
-								</option>
+								<listOptionValue builtIn="false" value="__weak=__attribute__((weak))" /><listOptionValue builtIn="false" value="__packed=__attribute__((__packed__))" /></option>
 								<option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other.161083010" name="Other flags" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other" useByScannerDiscovery="false" value="-fmessage-length=0" valueType="string" />
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1880243084" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp" />
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s.977929870" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s" />
@@ -208,16 +208,12 @@
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.222165726" superClass="cdt.managedbuild.tool.gnu.assembler.input" />
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.114599284" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input" />
 							</tool>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.exe.release.1594316112" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.exe.release">
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.40625521" superClass="cdt.managedbuild.tool.gnu.assembler.input" />
-								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.1567091270" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input" />
-							</tool>
 						</toolChain>
 					</folderInfo>
-					<sourceEntries><entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup" /><entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares" />
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers" />
+					<sourceEntries><entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares" /><entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers" />
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc" />
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src" />
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup" />
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -225,13 +221,7 @@
 		</cconfiguration>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-		<project id="Basestation.fr.ac6.managedbuild.target.gnu.cross.exe.889061191" name="Executable" projectType="fr.ac6.managedbuild.target.gnu.cross.exe" />
-	</storageModule>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="" />
-		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.763394793;fr.ac6.managedbuild.config.gnu.cross.exe.debug.763394793.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.153040358;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1909539130">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId="" />
-		</scannerConfigBuildInfo>
+		<project id="Basestation.fr.ac6.managedbuild.target.gnu.cross.exe.1427422411" name="Executable" projectType="fr.ac6.managedbuild.target.gnu.cross.exe" />
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders" />
 	<storageModule moduleId="refreshScope" versionNumber="2">
@@ -239,4 +229,14 @@
 			<resource resourceType="PROJECT" workspacePath="Basestation" />
 		</configuration>
 	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="" />
+		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.303681331;fr.ac6.managedbuild.config.gnu.cross.exe.debug.303681331.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1450647755;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.21567374">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId="" />
+		</scannerConfigBuildInfo>
+		<!--scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.release.$(RELEASE_CONFIG_UID);fr.ac6.managedbuild.config.gnu.cross.exe.release.$(RELEASE_CONFIG_UID).;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.$(RELEASE_TOOL_COMPILER_UID);cdt.managedbuild.tool.gnu.c.compiler.input.$(RELEASE_TOOL_COMPILER_INPUT_UID)">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo-->
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets" />
 </cproject>
