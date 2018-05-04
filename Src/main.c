@@ -135,7 +135,9 @@ int main(void)
 
 	while (1)
 	{
-		sendPacketLoop(); //for testing. remove afterwards
+		//sendPacketLoop(); //for testing. remove afterwards
+
+		tacticsCommTestLoop(); //for testing USB protocol with tactics PC
 
 		if(usbLength == ROBOPKTLEN){
 			sendPacket(usbData);

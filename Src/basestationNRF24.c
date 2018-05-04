@@ -84,6 +84,9 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 	int8_t returncode = 0;
 	roboAckData receivedRoboAck;
 
+	uint8_t nonack[24] = {0};
+	nonack[1] = (uint8_t) ((idOfLastCalledRobot)<<3); //a
+
 	do {
 		returncode = getAck(ack_payload, &payload_length);
 	} while(returncode == -1); //-1 means: no interrupt yet (no received packet yet)
@@ -91,11 +94,14 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 	if(returncode == -2) {
 		//packet loss. Send a non-ack to the PC
 		//I'm not sure if this is the format we agreed on..
-		sprintf(smallStrBuffer, "%i\n", idOfLastCalledRobot);
-		TextOut(smallStrBuffer);
+		//sprintf(smallStrBuffer, "%i\n", idOfLastCalledRobot);
+		//TextOut(smallStrBuffer);
 
-
-
+		for(uint8_t i=0; i < 24; i++) {
+			sprintf(smallStrBuffer, "%c", nonack[i]);
+			TextOut(smallStrBuffer);
+		}
+		//TextOut("\n");
 
 	} else if(returncode == 1) {
 		//we got a regular ACK packet! Let's see..
@@ -106,20 +112,34 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 
 			//writing ACK payload to PC by printing it as HEX values.
 			//Is that the right format?
-			for(uint8_t i=0; i < payload_length; i++) {
-				sprintf(smallStrBuffer, "%02x", ack_payload[i]);
+
+			sprintf(smallStrBuffer, "%c", 1);
+			TextOut(smallStrBuffer);
+			for(uint8_t i=1; i < payload_length+1; i++) {
+				sprintf(smallStrBuffer, "%c", ack_payload[i-1]);
 				TextOut(smallStrBuffer);
+			}
+			if(payload_length == SHORTACKPKTLEN) {
+				for(uint8_t i=SHORTACKPKTLEN+1; i < 24; i++) {
+					sprintf(smallStrBuffer, "%c", 0);
+					TextOut(smallStrBuffer);
+				}
 			}
 		} else {
 			//if the packet wasn't the right length, then ignore it
 		}
-
+		//TextOut("\n");
 
 	} else if(returncode == 0) {
 		//delivered, but got an empty ack.
 		//send to the PC that there is no ackpayload.. so: send a non-ack.
-		sprintf(smallStrBuffer, "%i\n", idOfLastCalledRobot);
-		TextOut(smallStrBuffer);
+		//sprintf(smallStrBuffer, "%i\n", idOfLastCalledRobot);
+		//TextOut(smallStrBuffer);
+		for(uint8_t i=0; i < 24; i++) {
+			sprintf(smallStrBuffer, "%c", nonack[i]);
+			TextOut(smallStrBuffer);
+		}
+		//TextOut("\n");
 
 
 	} else if(returncode == -3) {
