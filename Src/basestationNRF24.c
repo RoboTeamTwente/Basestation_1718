@@ -98,7 +98,7 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 		//TextOut(smallStrBuffer);
 
 		for(uint8_t i=0; i < 24; i++) {
-			sprintf(smallStrBuffer, "%c", nonack[i]);
+			sprintf(smallStrBuffer, "%02x", nonack[i]);
 			TextOut(smallStrBuffer);
 		}
 		//TextOut("\n");
@@ -113,15 +113,15 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 			//writing ACK payload to PC by printing it as HEX values.
 			//Is that the right format?
 
-			sprintf(smallStrBuffer, "%c", 1);
+			sprintf(smallStrBuffer, "%02x", 1);
 			TextOut(smallStrBuffer);
 			for(uint8_t i=1; i < payload_length+1; i++) {
-				sprintf(smallStrBuffer, "%c", ack_payload[i-1]);
+				sprintf(smallStrBuffer, "%02x", ack_payload[i-1]);
 				TextOut(smallStrBuffer);
 			}
 			if(payload_length == SHORTACKPKTLEN) {
 				for(uint8_t i=SHORTACKPKTLEN+1; i < 24; i++) {
-					sprintf(smallStrBuffer, "%c", 0);
+					sprintf(smallStrBuffer, "%02x", 0);
 					TextOut(smallStrBuffer);
 				}
 			}
@@ -136,7 +136,7 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 		//sprintf(smallStrBuffer, "%i\n", idOfLastCalledRobot);
 		//TextOut(smallStrBuffer);
 		for(uint8_t i=0; i < 24; i++) {
-			sprintf(smallStrBuffer, "%c", nonack[i]);
+			sprintf(smallStrBuffer, "%02x", nonack[i]);
 			TextOut(smallStrBuffer);
 		}
 		//TextOut("\n");
