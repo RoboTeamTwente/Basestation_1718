@@ -101,7 +101,7 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 			sprintf(smallStrBuffer, "%02x", nonack[i]);
 			TextOut(smallStrBuffer);
 		}
-		//TextOut("\n");
+		TextOut("\n");
 
 	} else if(returncode == 1) {
 		//we got a regular ACK packet! Let's see..
@@ -128,7 +128,7 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 		} else {
 			//if the packet wasn't the right length, then ignore it
 		}
-		//TextOut("\n");
+		TextOut("\n");
 
 	} else if(returncode == 0) {
 		//delivered, but got an empty ack.
@@ -139,7 +139,7 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 			sprintf(smallStrBuffer, "%02x", nonack[i]);
 			TextOut(smallStrBuffer);
 		}
-		//TextOut("\n");
+		TextOut("\n");
 
 
 	} else if(returncode == -3) {
