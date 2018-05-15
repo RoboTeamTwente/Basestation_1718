@@ -81,13 +81,12 @@ void SystemClock_Config(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-
 void tacticsCommTestLoop() {
 	roboData debugRoboData;
-	roboAckData debugRoboAckData;
 	uint8_t debugRoboPacket[ROBOPKTLEN];
 
-	debugRoboData.id = 10; //robot 10
+	packetToRoboData(usbData, &debugRoboData);
+/*	debugRoboData.id = 10; //robot 10
 	debugRoboData.rho = 1;
 	debugRoboData.theta = 2;
 	debugRoboData.driving_reference = 0;
@@ -102,16 +101,17 @@ void tacticsCommTestLoop() {
 	debugRoboData.geneva_drive_state = 3;
 	debugRoboData.cam_position_x = 1;
 	debugRoboData.cam_position_y = 2;
-	debugRoboData.cam_rotation = 3;
+	debugRoboData.cam_rotation = 3;*/
+
 	robotDataToPacket(&debugRoboData, debugRoboPacket);
 	sendPacket(debugRoboPacket);
 
 	//we need to know to which Robot the PC wanted to send.
 	//we could convert the whole array to a RobotData struct,
 	//but for performance reasons we just use bitshifting, implying our packet format.
-	//uint8_t robotToSendTo = 5;
-	//getAndProcessAck(robotToSendTo);
-	//HAL_Delay(1000);
+	uint8_t robotToSendTo = usbData[0] >> 3;
+	getAndProcessAck(robotToSendTo);
+	//HAL_Delay(100);
 
 }
 /* USER CODE END 0 */
@@ -162,35 +162,15 @@ int main(void)
 
 
 	HAL_Delay(1000);
-	uint8_t counter = 0;
+
 
 
 	while (1)
 	{
-		//sendPacketLoop(); //for testing. remove afterwards
-		counter++;
 		if(usbLength == ROBOPKTLEN){
-			for(uint8_t i=0;i<13;i++) {
-				sprintf(smallStrBuffer, "%02x ", usbData[i]);
-				TextOut(smallStrBuffer);
-			}
-			TextOut("\n");
-			tacticsCommTestLoop(); //for testing USB protocol with tactics PC
-
-			//we need to know to which Robot the PC wanted to send.
-			//we could convert the whole array to a RobotData struct,
-			//but for performance reasons we just use bitshifting, implying our packet format.
-			uint8_t robotToSendTo = 10;
-			getAndProcessAck(robotToSendTo);
+			tacticsCommTestLoop();
 			usbLength = 0;
 		}
-
-
-
-
-
-
-
 
   /* USER CODE END WHILE */
 
