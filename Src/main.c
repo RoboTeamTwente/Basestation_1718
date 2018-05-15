@@ -104,7 +104,7 @@ void sendDummyData() {
 	debugRoboData.cam_rotation = 3;
 
 	robotDataToPacket(&debugRoboData, debugRoboPacket);
-	sendPacket(usbData);
+	sendPacket(debugRoboPacket);
 	robotToSendTo = debugRoboData.id;
 }
 
