@@ -9,6 +9,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "TextOut.h"
+#include "usbd_cdc.h"
+#include "usb_device.h"
 char smallStrBuffer[1024];
 
 //adding a carriage-return (\r) at the first line-feed (\n) we find; then ensure the string ends with null (\0) right after that
@@ -26,9 +28,9 @@ void backslashNfixer(char* str){
 
 void TextOut(char *str){
 
-	backslashNfixer(str); //fixes encoding and copies to smallStrBuffer...
+	//backslashNfixer(str); //fixes encoding and copies to smallStrBuffer...
 	//memcpy(smallStrBuffer, str, strlen(str)); //already copied with backslashNfixer
-	int length = strlen(smallStrBuffer);
+	int length = strlen(str);
 
 	/*
 	while(CDC_Transmit_FS(0, 0) & USBD_BUSY) {
@@ -37,9 +39,9 @@ void TextOut(char *str){
 			return;
 	}
 	*/
-	//while(CDC_Transmit_FS((uint8_t*)smallStrBuffer, length) == USBD_BUSY);
+	while(((USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData)->TxState != 0);
+	strcpy(smallStrBuffer, str);
 	CDC_Transmit_FS((uint8_t*)smallStrBuffer, length);
-	HAL_Delay(1);
 
 	//clear buffer
 	for(uint16_t i = 0; i <= 1023; i++) {
