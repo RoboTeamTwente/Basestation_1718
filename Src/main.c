@@ -144,7 +144,7 @@ void dummyTestLoop() {
 	//but for performance reasons we just use bitshifting, implying our packet format.
 	uint8_t robotToSendTo = 10;
 	getAndProcessAck(robotToSendTo);
-	HAL_Delay(10);
+	HAL_Delay(50);
 
 }
 /* USER CODE END 0 */
@@ -202,7 +202,7 @@ int main(void)
 	{
 		dummyTestLoop();
 		if(usbLength == ROBOPKTLEN){
-			tacticsCommTestLoop();
+			//tacticsCommTestLoop();
 			usbLength = 0;
 		}
 
