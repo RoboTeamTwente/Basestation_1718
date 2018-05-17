@@ -85,8 +85,7 @@ void tacticsCommTestLoop() {
 	roboData debugRoboData;
 	uint8_t debugRoboPacket[ROBOPKTLEN];
 
-	packetToRoboData(usbData, &debugRoboData);
-/*	debugRoboData.id = 10; //robot 10
+	debugRoboData.id = 10; //robot 10
 	debugRoboData.rho = 1;
 	debugRoboData.theta = 2;
 	debugRoboData.driving_reference = 0;
@@ -101,7 +100,7 @@ void tacticsCommTestLoop() {
 	debugRoboData.geneva_drive_state = 3;
 	debugRoboData.cam_position_x = 1;
 	debugRoboData.cam_position_y = 2;
-	debugRoboData.cam_rotation = 3;*/
+	debugRoboData.cam_rotation = 3;
 	sprintf(smallStrBuffer,"id: %i\n",debugRoboData.id);
 	robotDataToPacket(&debugRoboData, debugRoboPacket);
 	sendPacket(debugRoboPacket);
@@ -109,8 +108,8 @@ void tacticsCommTestLoop() {
 	//we need to know to which Robot the PC wanted to send.
 	//we could convert the whole array to a RobotData struct,
 	//but for performance reasons we just use bitshifting, implying our packet format.
-	uint8_t robotToSendTo = usbData[0] >> 3;
-	getAndProcessAck(robotToSendTo);
+	//uint8_t robotToSendTo = usbData[0] >> 3;
+	//getAndProcessAck(robotToSendTo);
 	//HAL_Delay(10);
 
 }
@@ -143,7 +142,8 @@ void dummyTestLoop() {
 	//we could convert the whole array to a RobotData struct,
 	//but for performance reasons we just use bitshifting, implying our packet format.
 	uint8_t robotToSendTo = 10;
-	getAndProcessAck(robotToSendTo);
+	//getAndProcessAck(robotToSendTo);
+	clearInterrupts();
 	HAL_Delay(50);
 
 }
@@ -200,9 +200,10 @@ int main(void)
 
 	while (1)
 	{
-		//dummyTestLoop();
+		dummyTestLoop();
+		//tacticsCommTestLoop();
 		if(usbLength == ROBOPKTLEN){
-			tacticsCommTestLoop();
+
 			usbLength = 0;
 		}
 

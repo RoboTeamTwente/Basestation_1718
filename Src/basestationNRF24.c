@@ -109,7 +109,8 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 		//it it's the expected length, then unpack it to a struct
 		if(payload_length >= SHORTACKPKTLEN) {
 
-			//ackPacketToRoboAckData(ack_payload, payload_length, &receivedRoboAck);
+			ackPacketToRoboAckData(ack_payload, payload_length, &receivedRoboAck);
+			uint8_t roboid = receivedRoboAck.roboID;
 
 			//writing ACK payload to PC by printing it as HEX values.
 			//Is that the right format?
