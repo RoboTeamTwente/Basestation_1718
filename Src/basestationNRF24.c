@@ -97,49 +97,54 @@ uint8_t getAndProcessAck(uint8_t idOfLastCalledRobot) {
 		//sprintf(smallStrBuffer, "%i\n", idOfLastCalledRobot);
 		//TextOut(smallStrBuffer);
 
-		for(uint8_t i=0; i < 24; i++) {
+/*		for(uint8_t i=0; i < 24; i++) {
 			sprintf(smallStrBuffer, "%02x", nonack[i]);
 			TextOut(smallStrBuffer);
-		}
-		TextOut("\n");
+		}*/
+		sprintf(smallStrBuffer, "0\n");
+		TextOut(smallStrBuffer);
 
 	} else if(returncode == 1) {
 		//we got a regular ACK packet! Let's see..
 		//it it's the expected length, then unpack it to a struct
 		if(payload_length >= SHORTACKPKTLEN) {
 
-			ackPacketToRoboAckData(ack_payload, payload_length, &receivedRoboAck);
+			//ackPacketToRoboAckData(ack_payload, payload_length, &receivedRoboAck);
 
 			//writing ACK payload to PC by printing it as HEX values.
 			//Is that the right format?
 
-			sprintf(smallStrBuffer, "%02x", 1);
-			TextOut(smallStrBuffer);
-			for(uint8_t i=1; i < payload_length+1; i++) {
+/*			sprintf(smallStrBuffer, "%02x", 1);
+			TextOut(smallStrBuffer);*/
+/*			for(uint8_t i=1; i < payload_length+1; i++) {
 				sprintf(smallStrBuffer, "%02x", ack_payload[i-1]);
 				TextOut(smallStrBuffer);
-			}
-			if(payload_length == SHORTACKPKTLEN) {
-				for(uint8_t i=SHORTACKPKTLEN+1; i < 24; i++) {
+			}*/
+			//if(payload_length == SHORTACKPKTLEN) {
+/*				for(uint8_t i=SHORTACKPKTLEN+1; i < 24; i++) {
 					sprintf(smallStrBuffer, "%02x", 0);
 					TextOut(smallStrBuffer);
-				}
-			}
+				}*/
+
+			//}
+			sprintf(smallStrBuffer, "1\n");
+			TextOut(smallStrBuffer);
 		} else {
 			//if the packet wasn't the right length, then ignore it
 		}
-		TextOut("\n");
+
 
 	} else if(returncode == 0) {
 		//delivered, but got an empty ack.
 		//send to the PC that there is no ackpayload.. so: send a non-ack.
 		//sprintf(smallStrBuffer, "%i\n", idOfLastCalledRobot);
 		//TextOut(smallStrBuffer);
-		for(uint8_t i=0; i < 24; i++) {
+/*		for(uint8_t i=0; i < 24; i++) {
 			sprintf(smallStrBuffer, "%02x", nonack[i]);
 			TextOut(smallStrBuffer);
-		}
-		TextOut("\n");
+		}*/
+		sprintf(smallStrBuffer, "0\n");
+		TextOut(smallStrBuffer);
 
 
 	} else if(returncode == -3) {
