@@ -110,8 +110,8 @@ void tacticsCommTestLoop() {
 	//we could convert the whole array to a RobotData struct,
 	//but for performance reasons we just use bitshifting, implying our packet format.
 	uint8_t robotToSendTo = usbData[0] >> 3;
-	getAndProcessAck(robotToSendTo);
-	//clearInterrupts();
+	//getAndProcessAck(robotToSendTo);
+	clearInterrupts();
 	//HAL_Delay(10);
 
 }
